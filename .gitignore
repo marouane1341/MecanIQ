@@ -1,0 +1,14 @@
+# Node / dependencies
+node_modules/
+.npm/
+
+# Logs & temp
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Antigravity & AI scratch
+.gemini/
+.system_generated/
+*.ps1.bak

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#0B0F19" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Fond avec coins arrondis -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)" />
+  <rect width="510" height="510" x="1" y="1" rx="109" fill="none" stroke="#1E293B" stroke-width="3" />
+
+  <!-- Écrou Hexagonal de fond subtil -->
+  <polygon points="256,56 426,154 426,350 256,448 86,350 86,154" 
+           fill="none" stroke="#1E293B" stroke-width="8" stroke-dasharray="16 12" opacity="0.6"/>
+
+  <!-- Halo de lueur centrale -->
+  <circle cx="256" cy="240" r="130" fill="#F59E0B" opacity="0.08" filter="url(#glow)"/>
+
+  <!-- Logo Stylisé : Clé et Piston / Jauge MecanIQ -->
+  <g transform="translate(256, 230)">
+    <!-- Clé mécanique à 45° -->
+    <path d="M-80,-140 C-125,-95 -125,-30 -80,15 C-65,30 -45,38 -25,40 L-130,145 C-140,155 -140,170 -130,180 C-120,190 -105,190 -95,180 L10,75 C12,95 20,115 35,130 C80,175 145,175 190,130 C198,122 195,110 185,108 C150,105 125,80 122,45 C120,35 108,32 100,40 C75,65 35,65 10,40 C-15,15 -15,-25 10,-50 C35,-75 75,-75 100,-50 C108,-42 120,-45 122,-55 C125,-90 150,-115 185,-118 C195,-120 198,-132 190,-140 C145,-185 80,-185 35,-140 C20,-125 12,-105 10,-85 L-95,-180 C-105,-190 -120,-190 -130,-180 C-140,-170 -140,-155 -130,-145 L-25,-40 C-45,-38 -65,-30 -80,-140 Z"
+          fill="url(#orangeGrad)" filter="url(#glow)"/>
+    
+    <!-- Éclair / Impulsion Diagnostique Cyan -->
+    <polygon points="10,-60 -25,10 5,10 -15,70 35,0 5,0 25,-60" fill="url(#cyanGrad)"/>
+  </g>
+
+  <!-- Texte "MecanIQ" typographié -->
+  <text x="256" y="440" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="52" fill="#F8FAFC" letter-spacing="4">
+    MECAN<tspan fill="#F59E0B">IQ</tspan>
+  </text>
+  <text x="256" y="468" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="16" fill="#64748B" letter-spacing="6">
+    DATA • ATELIER • IA
+  </text>
+</svg>

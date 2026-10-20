@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>MecanIQ - Fiches Techniques Atelier & IA</title>
+  <meta name="description" content="Application atelier mécanique : fiches techniques fluides, boîtes à fusibles interactives, pannes chroniques et carnet d'entretien.">
+  <meta name="theme-color" content="#0B0F19">
+  
+  <!-- PWA Manifest & Icônes -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+  <!-- Feuilles de style -->
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <!-- BARRE LATÉRALE DESKTOP -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+        </svg>
+      </div>
+      <div class="brand-title">MECAN<span>IQ</span></div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item active" data-view="home">
+        <button type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>Recherche</span>
+        </button>
+      </li>
+      <li class="nav-item" data-view="favorites">
+        <button type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <span>Favoris</span>
+        </button>
+      </li>
+      <li class="nav-item" data-view="logbook">
+        <button type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          <span>Carnet de Bord</span>
+        </button>
+      </li>
+      <li class="nav-item" data-view="tools">
+        <button type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Convertisseurs</span>
+        </button>
+      </li>
+      <li class="nav-item" data-action="open-settings">
+        <button type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Paramètres & API</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      MecanIQ PWA v1.0 • Atelier Pro
+    </div>
+  </aside>
+
+  <!-- EN-TÊTE FIXE MOBILE & DESKTOP -->
+  <header class="app-header">
+    <div class="brand-badge" id="btnLogoHome">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+        </svg>
+      </div>
+      <div class="brand-title">MECAN<span>IQ</span></div>
+    </div>
+
+    <div class="header-actions">
+      <div class="network-badge" id="networkBadge">
+        <span class="network-dot"></span>
+        <span id="networkText">En ligne</span>
+      </div>
+
+      <button class="btn-icon" id="btnHeaderSettings" title="Paramètres & Clé API Gemini" aria-label="Paramètres">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENU PRINCIPAL -->
+  <main class="app-container">
+
+    <!-- ========================================================
+         VUE 1 : ACCUEIL & RECHERCHE UNIVERSELLE
+         ======================================================== -->
+    <section id="viewHome" class="view-section">
+      <!-- Section Hero Search -->
+      <div class="hero-search-section">
+        <h1 class="hero-title">Fiches Techniques <span class="text-amber">Atelier</span></h1>
+        <p class="hero-subtitle">Fluides certifiés, fusibles interactifs et diagnostics fiabilité instantanés</p>
+
+        <div class="search-box-wrapper">
+          <div class="search-input-container">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="globalSearchInput" class="search-input" placeholder="Rechercher marque, modèle ou moteur (ex: Clio 4, Golf 7 TDI, 208, A3...)" autocomplete="off">
+            <button id="btnSearchClear" class="search-clear-btn" title="Effacer la recherche">✕</button>
+            <button id="btnSearchSubmit" class="btn-primary" style="margin-left: 0.5rem;">
+              <span>Trouver</span>
+            </button>
+          </div>
+
+          <!-- Liste des suggestions déroulante -->
+          <div id="searchSuggestions" class="search-suggestions"></div>
+        </div>
+
+        <!-- Filtres rapides -->
+        <div class="search-filters">
+          <button class="filter-chip active" data-filter="all">Tous les véhicules</button>
+          <button class="filter-chip" data-filter="Diesel">Diesel</button>
+          <button class="filter-chip" data-filter="Essence">Essence</button>
+          <button class="filter-chip" data-filter="local">Base locale</button>
+          <button class="filter-chip" data-filter="ai">Générés IA</button>
+        </div>
+      </div>
+
+      <!-- CARTE DYNAMIQUE IA LORSQU'UN VÉHICULE N'EST PAS EN BASE -->
+      <div id="aiGeneratorCard" class="ai-generator-card">
+        <div class="ai-generator-header">
+          <svg class="ai-sparkle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+          <h3>Véhicule non répertorié dans la base locale</h3>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem;">
+          Le modèle <span id="aiTargetQuery" class="ai-query-name">"..."</span> ne figure pas encore dans votre base hors-ligne.
+          Souhaitez-vous générer sa fiche technique complète avec <strong>MecanIQ IA (Gemini Flash)</strong> ?
+        </p>
+        <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+          <button id="btnTriggerAiGeneration" class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>Générer avec Gemini Flash & Sauvegarder</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- LOADER PENDANT LA GÉNÉRATION IA -->
+      <div id="aiLoadingBox" class="ai-loading-box">
+        <div class="pulse-spinner"></div>
+        <div style="text-align: center;">
+          <h4 style="font-size: 1.1rem; color: var(--accent-amber);">Génération de la fiche technique en cours...</h4>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+            Consultation des spécifications atelier, normes d'huiles et boîte à fusibles via Gemini Flash...
+          </p>
+        </div>
+      </div>
+
+      <!-- HISTORIQUE DES VÉHICULES CONSULTÉS RÉCEMMENT -->
+      <div id="recentHistorySection" style="margin-bottom: 2rem; display: none;">
+        <div class="section-header">
+          <h2 class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Consultés récemment</span>
+          </h2>
+          <button id="btnClearHistory" class="btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+            Effacer
+          </button>
+        </div>
+        <div id="recentHistoryGrid" class="vehicles-grid"></div>
+      </div>
+
+      <!-- CATALOGUE DES VÉHICULES DISPONIBLES EN BASE -->
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span>Fiches Techniques Disponibles</span>
+          <span id="vehicleCountBadge" class="source-badge">5</span>
+        </h2>
+      </div>
+
+      <!-- Grille des véhicules -->
+      <div id="vehiclesGrid" class="vehicles-grid">
+        <!-- Rempli dynamiquement par JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VUE 2 : FICHE TECHNIQUE UNIVERSELLE
+         ======================================================== -->
+    <section id="viewSpecSheet" class="spec-sheet-view">
+      <!-- En-tête de la fiche avec retour et favori -->
+      <div class="spec-sheet-header">
+        <button id="btnBackToHome" class="spec-back-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Retour au catalogue</span>
+        </button>
+
+        <div class="spec-header-main">
+          <div>
+            <div id="specBrandBadge" class="card-brand">RENAULT</div>
+            <h1 id="specTitle" class="spec-header-title">Clio IV Phase 2</h1>
+            <div id="specEngineSubtitle" class="spec-header-subtitle">1.5 dCi 90 ch eco2 (K9K 608)</div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button id="btnToggleFavoriteSpec" class="btn-secondary" title="Ajouter aux favoris">
+              <svg id="specFavIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <span id="specFavText">Favori</span>
+            </button>
+            <button id="btnAddSpecToLogbook" class="btn-secondary" title="Ajouter à mon carnet de bord">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              <span>+ Carnet</span>
+            </button>
+            <button id="btnPrintSpec" class="btn-secondary" title="Imprimer ou enregistrer en PDF">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>Imprimer</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglets de la Fiche Technique -->
+      <nav class="sheet-tabs" role="tablist">
+        <button class="sheet-tab-btn active" data-tab="tabFluids">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+          </svg>
+          <span>Fluides & Vidange</span>
+        </button>
+        <button class="sheet-tab-btn" data-tab="tabFuses">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+            <path d="M6 12h4"></path>
+            <path d="M14 12h4"></path>
+          </svg>
+          <span>Boîtes à Fusibles</span>
+        </button>
+        <button class="sheet-tab-btn" data-tab="tabReliability">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Radioscopie & Fiabilité</span>
+        </button>
+        <button class="sheet-tab-btn" data-tab="tabEngineSpecs">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Distribution & Moteur</span>
+        </button>
+      </nav>
+
+      <!-- CONTENU ONGLET 1 : FLUIDES -->
+      <div id="tabFluids" class="tab-pane active">
+        <div class="data-grid-2">
+          <!-- Huile Moteur -->
+          <div class="detail-card">
+            <h3 class="detail-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+              </svg>
+              <span>Huile Moteur</span>
+            </h3>
+            <div class="spec-list">
+              <div class="spec-row">
+                <span class="spec-label">Viscosité recommandée</span>
+                <span id="specOilViscosity" class="spec-value highlight-amber">5W-30</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Norme constructeur stricte</span>
+                <span id="specOilStandard" class="spec-value highlight-cyan">RN0720</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Capacité avec filtre</span>
+                <span id="specOilCapWith" class="spec-value">4.8 L</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Capacité sans filtre</span>
+                <span id="specOilCapWithout" class="spec-value">4.4 L</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Intervalle de vidange préconisé</span>
+                <span id="specOilInterval" class="spec-value">20 000 km / 12 mois</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bouchon de Vidange -->
+          <div class="detail-card">
+            <h3 class="detail-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 8v8"></path>
+                <path d="M8 12h8"></path>
+              </svg>
+              <span>Carter & Bouchon de Vidange</span>
+            </h3>
+            <div class="spec-list">
+              <div class="spec-row">
+                <span class="spec-label">Couple de serrage bouchon</span>
+                <span id="specDrainTorque" class="spec-value highlight-amber" style="font-size: 1.15rem;">20 Nm</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Filetage / Empreinte</span>
+                <span id="specDrainThread" class="spec-value">M16 x 1.5 (Carré 8 mm)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Type de joint d'étanchéité</span>
+                <span id="specDrainWasher" class="spec-value">Joint cuivre écrasable</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Liquide de Refroidissement -->
+          <div class="detail-card">
+            <h3 class="detail-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+              </svg>
+              <span>Refroidissement Moteur</span>
+            </h3>
+            <div class="spec-list">
+              <div class="spec-row">
+                <span class="spec-label">Spécification liquide</span>
+                <span id="specCoolantType" class="spec-value highlight-cyan">Glaceol RX Type D</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Capacité totale du circuit</span>
+                <span id="specCoolantCapacity" class="spec-value">5.7 L</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Périodicité de purge</span>
+                <span id="specCoolantInterval" class="spec-value">4 ans ou 120 000 km</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Freinage & Boîte de Vitesses -->
+          <div class="detail-card">
+            <h3 class="detail-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <circle cx="12" cy="12" r="9"></circle>
+                <circle cx="12" cy="12" r="5"></circle>
+              </svg>
+              <span>Freins & Boîte de Vitesses</span>
+            </h3>
+            <div class="spec-list">
+              <div class="spec-row">
+                <span class="spec-label">Liquide de frein</span>
+                <span id="specBrakeFluidType" class="spec-value highlight-cyan">DOT 4+ Basse Viscosité</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Purge liquide frein</span>
+                <span id="specBrakeFluidInterval" class="spec-value">Tous les 2 ans</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Huile boîte de vitesses</span>
+                <span id="specGearboxType" class="spec-value" style="font-size: 0.8rem;">Elf Tranself NFX 75W</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Capacité huile boîte</span>
+                <span id="specGearboxCapacity" class="spec-value">2.5 L</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENU ONGLET 2 : BOÎTES À FUSIBLES -->
+      <div id="tabFuses" class="tab-pane">
+        <div class="detail-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <!-- Sélecteur d'emplacement (Habitacle / Moteur) -->
+            <div id="fuseBoxSelector" class="fuse-box-selector"></div>
+
+            <!-- Barre de filtre rapide par composant -->
+            <div style="min-width: 260px; flex: 1; max-width: 400px;">
+              <input type="text" id="fuseFilterInput" class="fuse-filter-input" placeholder="Filtrer un fusible (ex: allume-cigare, phares, clim...)">
+            </div>
+          </div>
+
+          <div id="fuseLocationNotice" style="background: var(--bg-secondary); padding: 0.85rem 1rem; border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; border: 1px solid var(--border-subtle);">
+            <strong>Emplacement :</strong> <span id="fuseBoxLocationText">Sous le volant</span>
+            <br>
+            <strong>Accès :</strong> <span id="fuseBoxAccessText">Déclipser le panneau</span>
+          </div>
+
+          <!-- Tableau interactif des fusibles -->
+          <div class="fuse-table-container">
+            <table class="fuse-table">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">Numéro</th>
+                  <th style="width: 100px;">Calibre</th>
+                  <th style="width: 110px;">Catégorie</th>
+                  <th>Fonction protégée & Composants</th>
+                </tr>
+              </thead>
+              <tbody id="fuseTableBody">
+                <!-- Rempli dynamiquement -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENU ONGLET 3 : RADIOSCOPIE & FIABILITÉ -->
+      <div id="tabReliability" class="tab-pane">
+        <!-- Résumé atelier -->
+        <div id="reliabilitySummaryBox" class="reliability-summary-card">
+          <!-- Texte de synthèse -->
+        </div>
+
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-rose)" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>Pannes Chroniques & Points Faibles Identifiés</span>
+        </h3>
+
+        <!-- Liste des pannes chroniques -->
+        <div id="criticalIssuesList"></div>
+
+        <div class="data-grid-2" style="margin-top: 1.5rem;">
+          <!-- Checklist d'achat -->
+          <div class="checklist-box">
+            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--accent-amber); display: flex; align-items: center; gap: 0.4rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              <span>Points de vigilance à l'achat</span>
+            </h4>
+            <div id="buyerChecklistContainer"></div>
+          </div>
+
+          <!-- Recommandations atelier -->
+          <div class="checklist-box">
+            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--accent-cyan); display: flex; align-items: center; gap: 0.4rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <span>Conseils de longévité atelier</span>
+            </h4>
+            <div id="serviceRecommendationsContainer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENU ONGLET 4 : DISTRIBUTION & MOTEUR -->
+      <div id="tabEngineSpecs" class="tab-pane">
+        <div class="data-grid-2">
+          <!-- Distribution -->
+          <div class="detail-card">
+            <h3 class="detail-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              <span>Distribution & Entraînement</span>
+            </h3>
+            <div class="spec-list">
+              <div class="spec-row">
+                <span class="spec-label">Type de distribution</span>
+                <span id="specTimingType" class="spec-value highlight-amber">Courroie</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Périodicité kilométrique</span>
+                <span id="specTimingKm" class="spec-value">150 000 km</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Périodicité temporelle</span>
+                <span id="specTimingYears" class="spec-value">6 ans</span>
+              </div>
+              <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); background: var(--bg-secondary); padding: 0.75rem; border-radius: var(--radius-sm);">
+                <strong>Notes :</strong> <span id="specTimingNotes">Remplacement systématique de la pompe à eau.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Caractéristiques Techniques Bloc -->
+          <div class="detail-card">
+            <h3 class="detail-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+              <span>Fiche Moteur & Cylindrée</span>
+            </h3>
+            <div class="spec-list">
+              <div class="spec-row">
+                <span class="spec-label">Code Moteur Constructeur</span>
+                <span id="specEngineCode" class="spec-value highlight-cyan">K9K 608</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Cylindrée</span>
+                <span id="specDisplacement" class="spec-value">1 461 cm³</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Puissance max</span>
+                <span id="specPower" class="spec-value">90 ch (66 kW)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Couple maximal</span>
+                <span id="specTorque" class="spec-value">220 Nm</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Carburant</span>
+                <span id="specFuel" class="spec-value">Diesel</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VUE 3 : FAVORIS
+         ======================================================== -->
+    <section id="viewFavorites" class="view-section hidden">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#EAB308" stroke="#EAB308" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <span>Véhicules Favoris</span>
+        </h2>
+      </div>
+      <div id="favoritesGrid" class="vehicles-grid">
+        <!-- Rempli par JS -->
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VUE 4 : CARNET DE BORD & JOURNAL D'ENTRETIEN
+         ======================================================== -->
+    <section id="viewLogbook" class="view-section hidden">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Carnet de Bord & Entretien</span>
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Suivi kilométrique et historique de toutes vos révisions</p>
+        </div>
+        <button id="btnOpenAddVehicleModal" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>+ Ajouter un véhicule</span>
+        </button>
+      </div>
+
+      <!-- Sélecteur de véhicule propriétaire -->
+      <div id="myVehiclesTabs" style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 4px;"></div>
+
+      <!-- Résumé du véhicule sélectionné -->
+      <div id="selectedVehicleSummary" class="detail-card" style="display: none; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div id="selectedVehiclePlate" class="french-plate">
+              <span class="plate-band">F</span>
+              <span>AA-123-BB</span>
+            </div>
+            <div>
+              <h3 id="selectedVehicleTitle" style="font-size: 1.2rem; font-weight: 800;">Renault Clio 4</h3>
+              <p id="selectedVehicleSubtitle" style="font-size: 0.85rem; color: var(--text-muted);">2017 • 128 500 km</p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="btnOpenAddLogModal" class="btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Enregistrer une intervention</span>
+            </button>
+            <button id="btnDeleteMyVehicle" class="btn-danger" title="Supprimer ce véhicule">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline des interventions -->
+      <div id="maintenanceLogsContainer" class="log-timeline">
+        <!-- Rempli dynamiquement -->
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VUE 5 : UTILITAIRES & CONVERTISSEURS ATELIER
+         ======================================================== -->
+    <section id="viewTools" class="tools-view hidden">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Convertisseurs Atelier Rapides</span>
+        </h2>
+      </div>
+
+      <!-- Convertisseur 1 : Pression (Bar <-> PSI <-> kPa) -->
+      <div class="converter-card">
+        <h3 class="converter-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+          <span>Pression Pneumatiques & Turbocompresseur</span>
+        </h3>
+
+        <div class="converter-inputs-grid">
+          <div class="converter-field">
+            <label for="inputBar">Pression en Bar</label>
+            <div class="converter-input-wrapper">
+              <input type="number" id="inputBar" class="converter-input" step="0.05" value="2.3">
+              <span class="converter-unit">Bar</span>
+            </div>
+          </div>
+
+          <div class="converter-equal-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="7" y1="9" x2="17" y2="9"></line>
+              <line x1="7" y1="15" x2="17" y2="15"></line>
+            </svg>
+          </div>
+
+          <div class="converter-field">
+            <label for="inputPsi">Pression en PSI (Pound per Square Inch)</label>
+            <div class="converter-input-wrapper">
+              <input type="number" id="inputPsi" class="converter-input" step="0.5" value="33.36">
+              <span class="converter-unit">PSI</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="filter-chip btn-quick-bar" data-val="2.0">2.0 Bar (29 PSI)</button>
+          <button class="filter-chip btn-quick-bar" data-val="2.3">2.3 Bar (33.4 PSI)</button>
+          <button class="filter-chip btn-quick-bar" data-val="2.5">2.5 Bar (36.3 PSI)</button>
+          <button class="filter-chip btn-quick-bar" data-val="3.0">3.0 Bar (43.5 PSI)</button>
+        </div>
+      </div>
+
+      <!-- Convertisseur 2 : Couple de serrage (Nm <-> ft-lb <-> in-lb) -->
+      <div class="converter-card">
+        <h3 class="converter-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          <span>Couple de Serrage Dynamométrique</span>
+        </h3>
+
+        <div class="converter-inputs-grid">
+          <div class="converter-field">
+            <label for="inputNm">Newton-mètre (Nm - Standard Europe)</label>
+            <div class="converter-input-wrapper">
+              <input type="number" id="inputNm" class="converter-input" step="1" value="110">
+              <span class="converter-unit">Nm</span>
+            </div>
+          </div>
+
+          <div class="converter-equal-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="7" y1="9" x2="17" y2="9"></line>
+              <line x1="7" y1="15" x2="17" y2="15"></line>
+            </svg>
+          </div>
+
+          <div class="converter-field">
+            <label for="inputFtLb">Pied-livre (ft-lb - Standard US/UK)</label>
+            <div class="converter-input-wrapper">
+              <input type="number" id="inputFtLb" class="converter-input" step="1" value="81.1">
+              <span class="converter-unit">ft-lb</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mémos couples d'atelier fréquents -->
+        <table class="torque-reference-table">
+          <thead>
+            <tr>
+              <th>Application mécanique type</th>
+              <th>Couple en Nm</th>
+              <th>Couple en ft-lb</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Bouchon de vidange carter tôle/alu</td>
+              <td class="font-mono text-amber">20 à 30 Nm</td>
+              <td class="font-mono text-muted">15 à 22 ft-lb</td>
+            </tr>
+            <tr>
+              <td>Écrous de roues (jantes tôle acier)</td>
+              <td class="font-mono text-amber">100 à 110 Nm</td>
+              <td class="font-mono text-muted">74 à 81 ft-lb</td>
+            </tr>
+            <tr>
+              <td>Écrous / Goujons de roues (jantes aluminium)</td>
+              <td class="font-mono text-amber">120 à 140 Nm</td>
+              <td class="font-mono text-muted">88 à 103 ft-lb</td>
+            </tr>
+            <tr>
+              <td>Bougies d'allumage neuves (siège conique ou joint)</td>
+              <td class="font-mono text-amber">20 à 25 Nm</td>
+              <td class="font-mono text-muted">15 à 18 ft-lb</td>
+            </tr>
+            <tr>
+              <td>Cloche / Boîtier filtre à huile plastique</td>
+              <td class="font-mono text-amber">25 Nm (max)</td>
+              <td class="font-mono text-muted">18 ft-lb</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================
+       BARRE DE NAVIGATION INFÉRIEURE MOBILE (BOTTOM BAR)
+       ======================================================== -->
+  <nav class="bottom-nav">
+    <button class="bottom-nav-item active" data-view="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <span>Recherche</span>
+    </button>
+    <button class="bottom-nav-item" data-view="favorites">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+      <span>Favoris</span>
+    </button>
+    <button class="bottom-nav-item" data-view="logbook">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+      </svg>
+      <span>Carnet</span>
+    </button>
+    <button class="bottom-nav-item" data-view="tools">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+      </svg>
+      <span>Outils</span>
+    </button>
+    <button class="bottom-nav-item" data-action="open-settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>Réglages</span>
+    </button>
+  </nav>
+
+  <!-- ========================================================
+       MODALE : PARAMÈTRES & CONFIGURATION CLÉ API GEMINI
+       ======================================================== -->
+  <div id="modalSettings" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Paramètres & IA Gemini</span>
+        </h3>
+        <button class="btn-icon btn-close-modal" data-target="modalSettings">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Configuration Clé API Google AI Studio -->
+        <div class="form-group">
+          <label class="form-label" for="settingApiKey">Clé API Google Gemini (Google AI Studio)</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" id="settingApiKey" class="form-control" placeholder="AIzaSy..." style="padding-right: 2.8rem; width: 100%;">
+            <button type="button" id="btnToggleApiKeyVisibility" class="btn-icon" style="position: absolute; right: 4px; height: 32px; width: 32px;" title="Afficher/Masquer">
+              👁
+            </button>
+          </div>
+          <p class="form-help">
+            Stockée localement dans votre navigateur. Obtenez une clé gratuite sur <a href="https://aistudio.google.com/" target="_blank" rel="noopener" style="color: var(--accent-amber);">Google AI Studio</a>.
+          </p>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <button type="button" id="btnTestApiKey" class="btn-secondary" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+              Tester la connexion
+            </button>
+            <span id="apiKeyTestStatus" style="font-size: 0.82rem; display: flex; align-items: center;"></span>
+          </div>
+        </div>
+
+        <!-- Modèle IA sélectionné -->
+        <div class="form-group">
+          <label class="form-label" for="settingModelSelect">Modèle Gemini utilisé pour les fiches</label>
+          <select id="settingModelSelect" class="form-control">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Ultra-rapide & Récent - Recommandé)</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Stable)</option>
+          </select>
+        </div>
+
+        <!-- Stockage local & Cache -->
+        <div class="form-group" style="padding-top: 0.5rem; border-top: 1px solid var(--border-subtle);">
+          <label class="form-label">Gestion des données locales & Hors-ligne</label>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <span id="storageStatsText">Calcul du stockage...</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" id="btnClearCacheBtn" class="btn-secondary" style="font-size: 0.8rem;">
+              Vider fiches IA en cache
+            </button>
+            <button type="button" id="btnExportDataBtn" class="btn-secondary" style="font-size: 0.8rem;">
+              Exporter données (JSON)
+            </button>
+            <button type="button" id="btnImportDataBtn" class="btn-secondary" style="font-size: 0.8rem;">
+              Importer données
+            </button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary btn-close-modal" data-target="modalSettings">Fermer</button>
+        <button id="btnSaveSettings" class="btn-primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODALE : AJOUTER UN VÉHICULE AU CARNET DE BORD
+       ======================================================== -->
+  <div id="modalAddVehicle" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Ajouter un véhicule à mon garage</h3>
+        <button class="btn-icon btn-close-modal" data-target="modalAddVehicle">✕</button>
+      </div>
+      <form id="formAddVehicle">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="inputMyPlate">Immatriculation</label>
+            <input type="text" id="inputMyPlate" class="form-control" placeholder="AB-123-CD" required style="font-family: var(--font-mono); text-transform: uppercase;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputMyBrand">Marque</label>
+            <input type="text" id="inputMyBrand" class="form-control" placeholder="ex: Renault, Peugeot, Volkswagen..." required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputMyModel">Modèle & Finition</label>
+            <input type="text" id="inputMyModel" class="form-control" placeholder="ex: Clio 4 Intens" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputMyEngine">Motorisation</label>
+            <input type="text" id="inputMyEngine" class="form-control" placeholder="ex: 1.5 dCi 90 ch">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputMyYear">Année de mise en circulation</label>
+            <input type="number" id="inputMyYear" class="form-control" placeholder="2016" min="1980" max="2030">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputMyMileage">Kilométrage actuel (km)</label>
+            <input type="number" id="inputMyMileage" class="form-control" placeholder="125000" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal" data-target="modalAddVehicle">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer le véhicule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODALE : AJOUTER UNE INTERVENTION D'ENTRETIEN
+       ======================================================== -->
+  <div id="modalAddLog" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Nouvelle intervention d'atelier</h3>
+        <button class="btn-icon btn-close-modal" data-target="modalAddLog">✕</button>
+      </div>
+      <form id="formAddLog">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="inputLogType">Type d'intervention</label>
+            <select id="inputLogType" class="form-control" required>
+              <option value="Vidange Moteur + Filtres">Vidange Moteur + Filtres</option>
+              <option value="Freinage (Plaquettes / Disques)">Freinage (Plaquettes / Disques)</option>
+              <option value="Distribution + Pompe à eau">Distribution + Pompe à eau</option>
+              <option value="Pneumatiques & Géométrie">Pneumatiques & Géométrie</option>
+              <option value="Vidange Boîte de Vitesses">Vidange Boîte de Vitesses</option>
+              <option value="Liquide de Refroidissement / Frein">Purge Liquides (Refroidissement / Frein)</option>
+              <option value="Contrôle Technique">Contrôle Technique</option>
+              <option value="Autre réparation">Autre intervention d'atelier</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label" for="inputLogDate">Date</label>
+              <input type="date" id="inputLogDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputLogKm">Kilométrage (km)</label>
+              <input type="number" id="inputLogKm" class="form-control" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label" for="inputLogCost">Coût total (€)</label>
+              <input type="number" id="inputLogCost" class="form-control" step="0.5" placeholder="85.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputLogProvider">Effectué par</label>
+              <input type="text" id="inputLogProvider" class="form-control" placeholder="Soi-même / Garage">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputLogNotes">Détails, pièces & références utilisées</label>
+            <textarea id="inputLogNotes" class="form-control" rows="3" placeholder="Huile 5W-30 RN0720 Elf, filtre Purflux L398A, joint cuivre neuf..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputLogNextKm">Prochain rappel kilométrique (km conseillé)</label>
+            <input type="number" id="inputLogNextKm" class="form-control" placeholder="140000">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal" data-target="modalAddLog">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer l'intervention</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONTENEUR DES NOTIFICATIONS TOAST -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- SCRIPT PRINCIPAL SPA / PWA -->
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
