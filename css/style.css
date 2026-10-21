@@ -3,7 +3,7 @@
    Design System Industriel & Haute Performance
    ========================================================================== */
 
-:root {
+:root, [data-theme="dark-amber"] {
   --bg-primary: #0a0e17;
   --bg-secondary: #111827;
   --bg-card: #151d2d;
@@ -43,6 +43,110 @@
   --sidebar-width: 250px;
   --nav-bottom-height: 64px;
   --header-height: 60px;
+}
+
+/* Thème 2 : Noir Pur (OLED / Économie d'énergie) */
+[data-theme="oled"] {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #121212;
+  --bg-card-hover: #1c1c1c;
+  --bg-card-active: #262626;
+  --bg-input: #080808;
+
+  --border-subtle: #242424;
+  --border-focus: #f59e0b;
+  --border-highlight: #383838;
+
+  --text-main: #ffffff;
+  --text-muted: #a3a3a3;
+  --text-dim: #737373;
+
+  --accent-amber: #f59e0b;
+  --accent-amber-glow: rgba(245, 158, 11, 0.35);
+  --accent-cyan: #38bdf8;
+  --accent-cyan-glow: rgba(56, 189, 248, 0.25);
+  --accent-emerald: #10b981;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.95);
+}
+
+/* Thème 3 : Bleu Minuit / Cobalt Pro */
+[data-theme="midnight"] {
+  --bg-primary: #0b132b;
+  --bg-secondary: #141f3d;
+  --bg-card: #1c2a4f;
+  --bg-card-hover: #263866;
+  --bg-card-active: #31467e;
+  --bg-input: #0f1833;
+
+  --border-subtle: #253763;
+  --border-focus: #38bdf8;
+  --border-highlight: #364e8a;
+
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  --accent-amber: #38bdf8;
+  --accent-amber-glow: rgba(56, 189, 248, 0.3);
+  --accent-cyan: #60a5fa;
+  --accent-cyan-glow: rgba(96, 165, 250, 0.25);
+  --accent-emerald: #34d399;
+}
+
+/* Thème 4 : Graphite Sobre & Titane Neutre */
+[data-theme="graphite"] {
+  --bg-primary: #18181b;
+  --bg-secondary: #27272a;
+  --bg-card: #2f2f35;
+  --bg-card-hover: #3b3b42;
+  --bg-card-active: #484852;
+  --bg-input: #1e1e22;
+
+  --border-subtle: #3f3f46;
+  --border-focus: #a1a1aa;
+  --border-highlight: #52525b;
+
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-dim: #71717a;
+
+  --accent-amber: #e4e4e7;
+  --accent-amber-glow: rgba(228, 228, 231, 0.25);
+  --accent-cyan: #38bdf8;
+  --accent-cyan-glow: rgba(56, 189, 248, 0.2);
+  --accent-emerald: #10b981;
+}
+
+/* Thème 5 : Atelier Plein Soleil (Mode Clair Pro) */
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-card-active: #e2e8f0;
+  --bg-input: #ffffff;
+
+  --border-subtle: #e2e8f0;
+  --border-focus: #d97706;
+  --border-highlight: #cbd5e1;
+
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-dim: #64748b;
+
+  --accent-amber: #d97706;
+  --accent-amber-glow: rgba(217, 119, 6, 0.2);
+  --accent-cyan: #0284c7;
+  --accent-cyan-glow: rgba(2, 132, 199, 0.15);
+  --accent-emerald: #059669;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.12);
 }
 
 /* Reset de base */

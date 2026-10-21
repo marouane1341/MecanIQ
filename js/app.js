@@ -4,6 +4,7 @@
  */
 
 import { db } from "./db.js";
+import { INITIAL_VEHICLES } from "./data/initial-vehicles.js";
 import { 
   getApiKey, 
   saveApiKey, 
@@ -16,7 +17,7 @@ import {
 
 class MecanIQApp {
   constructor() {
-    this.vehicles = [];
+    this.vehicles = INITIAL_VEHICLES || [];
     this.currentVehicle = null;
     this.selectedFuseBoxIndex = 0;
     this.activeFilter = "all";
@@ -30,30 +31,44 @@ class MecanIQApp {
   }
 
   async init() {
-    // 1. Initialisation IndexedDB
-    try {
-      await db.init();
-      this.vehicles = await db.getAllVehicles();
-    } catch (err) {
-      console.error("Erreur init DB :", err);
-      this.showToast("Erreur d'initialisation de la base locale", "error");
-    }
+    // 1. Initialiser le thème d'atelier immédiatement
+    this.initTheme();
 
-    // 2. Enregistrement PWA Service Worker
-    this.registerServiceWorker();
-
-    // 3. Liaison des écouteurs UI
+    // 2. Liaison synchrone et immédiate des écouteurs UI (garantit la réactivité permanente de tous les boutons et onglets)
     this.setupEventListeners();
     this.setupNetworkStatusListener();
     this.setupConverters();
 
-    // 4. Chargement initial des vues
-    await this.renderCatalog();
-    await this.renderRecentHistory();
-    await this.loadMyVehicles();
-    await this.updateStorageStats();
+    // 3. Enregistrement PWA Service Worker
+    this.registerServiceWorker();
 
-    // 5. Gestion de l'historique du navigateur / hash
+    // 4. Initialisation IndexedDB avec repli mémoire garanti
+    try {
+      await db.init();
+      const loaded = await db.getAllVehicles();
+      if (loaded && loaded.length > 0) {
+        this.vehicles = loaded;
+      }
+    } catch (err) {
+      console.warn("IndexedDB indisponible ou bloqué, conservation de la base intégrée :", err);
+      this.vehicles = INITIAL_VEHICLES;
+    }
+
+    if (!this.vehicles || this.vehicles.length === 0) {
+      this.vehicles = INITIAL_VEHICLES;
+    }
+
+    // 5. Chargement initial des vues
+    try {
+      await this.renderCatalog();
+      await this.renderRecentHistory();
+      await this.loadMyVehicles();
+      await this.updateStorageStats();
+    } catch (err) {
+      console.error("Erreur chargement des vues :", err);
+    }
+
+    // 6. Gestion du routage
     this.handleRoute();
     window.addEventListener("hashchange", () => this.handleRoute());
   }
@@ -92,6 +107,56 @@ class MecanIQApp {
     window.addEventListener("online", updateStatus);
     window.addEventListener("offline", updateStatus);
     updateStatus();
+  }
+
+  // =========================================================================
+  // GESTION DU THÈME VISUEL ATELIER
+  // =========================================================================
+
+  initTheme() {
+    let savedTheme = "dark-amber";
+    try {
+      savedTheme = localStorage.getItem("mecaniq_theme") || "dark-amber";
+    } catch (e) {}
+    this.setTheme(savedTheme, false);
+  }
+
+  setTheme(themeName, showToastFeedback = true) {
+    const validThemes = ["dark-amber", "oled", "midnight", "graphite", "light"];
+    const theme = validThemes.includes(themeName) ? themeName : "dark-amber";
+
+    document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem("mecaniq_theme", theme);
+    } catch (e) {}
+
+    const select = document.getElementById("settingThemeSelect");
+    if (select && select.value !== theme) {
+      select.value = theme;
+    }
+
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      const themeColors = {
+        "dark-amber": "#0a0e17",
+        "oled": "#000000",
+        "midnight": "#0b132b",
+        "graphite": "#18181b",
+        "light": "#f8fafc"
+      };
+      metaThemeColor.setAttribute("content", themeColors[theme] || "#0a0e17");
+    }
+
+    if (showToastFeedback) {
+      const themeLabels = {
+        "dark-amber": "🛠️ Atelier Sombre (Ambre & Carbone)",
+        "oled": "🖤 Noir Pur OLED",
+        "midnight": "🌌 Bleu Minuit (Cobalt Pro)",
+        "graphite": "⚙️ Graphite & Titane (Gris Neutre)",
+        "light": "☀️ Atelier Plein Soleil (Clair)"
+      };
+      this.showToast(`Thème activé : ${themeLabels[theme] || theme}`, "info");
+    }
   }
 
   // =========================================================================
@@ -239,6 +304,11 @@ class MecanIQApp {
       this.renderFusesTable(e.target.value.trim().toLowerCase());
     });
 
+    // Modale Paramètres : Thème
+    document.getElementById("settingThemeSelect")?.addEventListener("change", (e) => {
+      this.setTheme(e.target.value, true);
+    });
+
     // Modale Paramètres : Clé API & Modèle
     document.getElementById("btnToggleApiKeyVisibility")?.addEventListener("click", () => {
       const input = document.getElementById("settingApiKey");
@@ -305,7 +375,7 @@ class MecanIQApp {
     });
   }
 
-  navigateTo(viewName, params = null) {
+  navigateTo(viewName, updateHash = true) {
     this.activeView = viewName;
 
     // Masquage de toutes les sections
@@ -322,30 +392,48 @@ class MecanIQApp {
     // Affichage de la vue ciblée
     if (viewName === "home") {
       const el = document.getElementById("viewHome");
-      el.classList.remove("hidden");
-      el.style.display = "block";
-      window.location.hash = "search";
+      if (el) {
+        el.classList.remove("hidden");
+        el.style.display = "block";
+      }
+      if (updateHash && window.location.hash !== "#search" && window.location.hash !== "") {
+        window.location.hash = "search";
+      }
     } else if (viewName === "favorites") {
       const el = document.getElementById("viewFavorites");
-      el.classList.remove("hidden");
-      el.style.display = "block";
+      if (el) {
+        el.classList.remove("hidden");
+        el.style.display = "block";
+      }
       this.renderFavorites();
-      window.location.hash = "favorites";
+      if (updateHash && window.location.hash !== "#favorites") {
+        window.location.hash = "favorites";
+      }
     } else if (viewName === "logbook") {
       const el = document.getElementById("viewLogbook");
-      el.classList.remove("hidden");
-      el.style.display = "block";
+      if (el) {
+        el.classList.remove("hidden");
+        el.style.display = "block";
+      }
       this.loadMyVehicles();
-      window.location.hash = "logbook";
+      if (updateHash && window.location.hash !== "#logbook") {
+        window.location.hash = "logbook";
+      }
     } else if (viewName === "tools") {
       const el = document.getElementById("viewTools");
-      el.classList.remove("hidden");
-      el.style.display = "block";
-      window.location.hash = "tools";
+      if (el) {
+        el.classList.remove("hidden");
+        el.style.display = "block";
+      }
+      if (updateHash && window.location.hash !== "#tools") {
+        window.location.hash = "tools";
+      }
     } else if (viewName === "specSheet") {
       const el = document.getElementById("viewSpecSheet");
-      el.classList.remove("hidden");
-      el.style.display = "block";
+      if (el) {
+        el.classList.remove("hidden");
+        el.style.display = "block";
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
@@ -354,15 +442,15 @@ class MecanIQApp {
     const hash = window.location.hash.replace("#", "");
     if (hash.startsWith("vehicle/")) {
       const vehicleId = hash.replace("vehicle/", "");
-      this.openSpecSheet(vehicleId);
+      this.openSpecSheet(vehicleId, false);
     } else if (hash === "favorites") {
-      this.navigateTo("favorites");
+      this.navigateTo("favorites", false);
     } else if (hash === "logbook") {
-      this.navigateTo("logbook");
+      this.navigateTo("logbook", false);
     } else if (hash === "tools") {
-      this.navigateTo("tools");
+      this.navigateTo("tools", false);
     } else {
-      this.navigateTo("home");
+      this.navigateTo("home", false);
     }
   }
 
@@ -779,7 +867,7 @@ class MecanIQApp {
   // AFFICHAGE DE LA FICHE TECHNIQUE UNIVERSELLE
   // =========================================================================
 
-  async openSpecSheet(vehicleId) {
+  async openSpecSheet(vehicleId, updateHash = true) {
     let vehicle = this.vehicles.find((v) => v.id === vehicleId);
     if (!vehicle) {
       vehicle = await db.getVehicleById(vehicleId);
@@ -961,7 +1049,9 @@ class MecanIQApp {
 
     // Afficher la vue
     this.navigateTo("specSheet");
-    window.location.hash = `vehicle/${vehicle.id}`;
+    if (updateHash && window.location.hash !== `#vehicle/${vehicle.id}`) {
+      window.location.hash = `vehicle/${vehicle.id}`;
+    }
   }
 
   updateSpecFavoriteButton(isFav) {
@@ -1337,6 +1427,12 @@ class MecanIQApp {
 
     const apiKey = await getApiKey();
     const model = await getSelectedModel();
+    const currentTheme = localStorage.getItem("mecaniq_theme") || "dark-amber";
+
+    const themeSelect = document.getElementById("settingThemeSelect");
+    if (themeSelect) {
+      themeSelect.value = currentTheme;
+    }
 
     document.getElementById("settingApiKey").value = apiKey;
     document.getElementById("settingModelSelect").value = model;
@@ -1375,12 +1471,17 @@ class MecanIQApp {
   async saveSettings() {
     const key = document.getElementById("settingApiKey").value.trim();
     const model = document.getElementById("settingModelSelect").value;
+    const theme = document.getElementById("settingThemeSelect")?.value;
+
+    if (theme) {
+      this.setTheme(theme, false);
+    }
 
     await saveApiKey(key);
     await saveSelectedModel(model);
 
     document.getElementById("modalSettings").classList.remove("open");
-    this.showToast("Paramètres et clé API enregistrés avec succès.", "success");
+    this.showToast("Paramètres enregistrés avec succès.", "success");
   }
 
   async updateStorageStats() {

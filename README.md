@@ -160,7 +160,13 @@
 - **Convertisseur Couple de Serrage** : conversion bidirectionnelle Nm <-> ft-lb (pied-livre).
 - **Aide-mémoire des couples de serrage types** : bouchons de vidange carter tôle/alu, jantes alu/acier, bougies d'allumage et cloches de filtre à huile.
 
-### 5. Écran Paramètres & Configuration API
+### 5. Écran Paramètres, Thèmes & Configuration API
+- **Sélecteur de thèmes d'atelier personnalisables** :
+  - **🛠️ Atelier Sombre** (Ambre & Carbone - Défaut immersif)
+  - **🖤 Noir Pur** (OLED ultra-profond / Économie d'énergie maximale)
+  - **🌌 Bleu Minuit** (Cobalt Pro - Ambiance nocturne douce et moderne)
+  - **⚙️ Graphite & Titane** (Gris neutre mesuré et reposant)
+  - **☀️ Atelier Plein Soleil** (Mode clair contrasté haute visibilité)
 - Saisie sécurisée de votre clé API Google Gemini ([Google AI Studio](https://aistudio.google.com/)).
 - Bouton **"Tester la connexion"** pour vérifier immédiatement la validité de votre clé.
 - Choix du modèle Gemini (`gemini-2.5-flash` ou `gemini-1.5-flash`).

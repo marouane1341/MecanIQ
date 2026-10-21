@@ -1,6 +1,6 @@
 /**
- * MecanIQ - Base de donnÃ©es locale de rÃ©fÃ©rence des vÃ©hicules (vehicles.json)
- * 106 Motorisations de rÃ©fÃ©rence d'atelier intÃ©grÃ©es par dÃ©faut
+ * MecanIQ - Base de donnees locale de reference des vehicules (vehicles.json)
+ * 106 Motorisations de reference d'atelier integrees par defaut
  */
 
 export const INITIAL_VEHICLES = [

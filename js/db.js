@@ -6,7 +6,7 @@
 import { INITIAL_VEHICLES } from "./data/initial-vehicles.js";
 
 const DB_NAME = "MecanIQ_Database";
-const DB_VERSION = 15;
+const DB_VERSION = 16;
 
 class MecanIQDatabase {
   constructor() {
@@ -18,92 +18,123 @@ class MecanIQDatabase {
    * Initialise et met à niveau IndexedDB
    */
   async init() {
+    if (this.db) return this.db;
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
 
-        // Table des fiches techniques véhicules
-        if (!db.objectStoreNames.contains("vehicles")) {
-          const vehicleStore = db.createObjectStore("vehicles", { keyPath: "id" });
-          vehicleStore.createIndex("brand", "brand", { unique: false });
-          vehicleStore.createIndex("source", "source", { unique: false });
-          vehicleStore.createIndex("created_at", "created_at", { unique: false });
-        }
+          // Table des fiches techniques véhicules
+          if (!db.objectStoreNames.contains("vehicles")) {
+            const vehicleStore = db.createObjectStore("vehicles", { keyPath: "id" });
+            vehicleStore.createIndex("brand", "brand", { unique: false });
+            vehicleStore.createIndex("source", "source", { unique: false });
+            vehicleStore.createIndex("created_at", "created_at", { unique: false });
+          }
 
-        // Table de l'historique de consultation
-        if (!db.objectStoreNames.contains("history")) {
-          const historyStore = db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
-          historyStore.createIndex("vehicleId", "vehicleId", { unique: false });
-          historyStore.createIndex("viewed_at", "viewed_at", { unique: false });
-        }
+          // Table de l'historique de consultation
+          if (!db.objectStoreNames.contains("history")) {
+            const historyStore = db.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+            historyStore.createIndex("vehicleId", "vehicleId", { unique: false });
+            historyStore.createIndex("viewed_at", "viewed_at", { unique: false });
+          }
 
-        // Table des favoris
-        if (!db.objectStoreNames.contains("favorites")) {
-          db.createObjectStore("favorites", { keyPath: "vehicleId" });
-        }
+          // Table des favoris
+          if (!db.objectStoreNames.contains("favorites")) {
+            db.createObjectStore("favorites", { keyPath: "vehicleId" });
+          }
 
-        // Table des véhicules du carnet de bord
-        if (!db.objectStoreNames.contains("my_vehicles")) {
-          const myVehiclesStore = db.createObjectStore("my_vehicles", { keyPath: "id" });
-          myVehiclesStore.createIndex("plate", "plate", { unique: false });
-        }
+          // Table des véhicules du carnet de bord
+          if (!db.objectStoreNames.contains("my_vehicles")) {
+            const myVehiclesStore = db.createObjectStore("my_vehicles", { keyPath: "id" });
+            myVehiclesStore.createIndex("plate", "plate", { unique: false });
+          }
 
-        // Table des entrées d'entretien du carnet de bord
-        if (!db.objectStoreNames.contains("maintenance_logs")) {
-          const logStore = db.createObjectStore("maintenance_logs", { keyPath: "id" });
-          logStore.createIndex("vehicleId", "vehicleId", { unique: false });
-          logStore.createIndex("date", "date", { unique: false });
-        }
+          // Table des entrées d'entretien du carnet de bord
+          if (!db.objectStoreNames.contains("maintenance_logs")) {
+            const logStore = db.createObjectStore("maintenance_logs", { keyPath: "id" });
+            logStore.createIndex("vehicleId", "vehicleId", { unique: false });
+            logStore.createIndex("date", "date", { unique: false });
+          }
 
-        // Table des paramètres / configurations
-        if (!db.objectStoreNames.contains("settings")) {
-          db.createObjectStore("settings", { keyPath: "key" });
-        }
-      };
+          // Table des paramètres / configurations
+          if (!db.objectStoreNames.contains("settings")) {
+            db.createObjectStore("settings", { keyPath: "key" });
+          }
+        };
 
-      request.onsuccess = async (event) => {
-        this.db = event.target.result;
-        await this.seedInitialData();
-        resolve(this.db);
-      };
+        request.onsuccess = async (event) => {
+          this.db = event.target.result;
+          try {
+            await this.seedInitialData();
+          } catch (seedErr) {
+            console.warn("Avertissement seed données :", seedErr);
+          }
+          resolve(this.db);
+        };
 
-      request.onerror = (event) => {
-        console.error("Erreur d'ouverture IndexedDB :", event.target.error);
-        reject(event.target.error);
-      };
+        request.onerror = (event) => {
+          console.error("Erreur d'ouverture IndexedDB :", event.target.error);
+          this.initPromise = null;
+          reject(event.target.error);
+        };
+      } catch (err) {
+        console.error("IndexedDB indisponible :", err);
+        this.initPromise = null;
+        reject(err);
+      }
     });
 
     return this.initPromise;
   }
 
   /**
+   * Garantit une connexion ouverte à IndexedDB
+   */
+  async ensureDb() {
+    if (this.db) return this.db;
+    return await this.init();
+  }
+
+  /**
    * Charge les véhicules par défaut dans la base si la table est vide ou pour actualiser les véhicules de référence
    */
   async seedInitialData() {
-    const existing = await this.getAllVehicles();
-    const tx = this.db.transaction("vehicles", "readwrite");
-    const store = tx.objectStore("vehicles");
-
-    for (const v of INITIAL_VEHICLES) {
-      const alreadyPresent = existing.find(e => e.id === v.id);
-      if (!alreadyPresent || alreadyPresent.source === "local_base") {
-        store.put({
-          ...v,
-          brand: v.brand || v.make,
-          make: v.make || v.brand,
-          source: "local_base",
-          created_at: alreadyPresent?.created_at || new Date().toISOString()
-        });
-      }
-    }
-
+    if (!this.db) return;
     return new Promise((resolve) => {
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
+      try {
+        const tx = this.db.transaction("vehicles", "readwrite");
+        const store = tx.objectStore("vehicles");
+        const req = store.getAll();
+
+        req.onsuccess = () => {
+          const existing = req.result || [];
+          const existingMap = new Map(existing.map(e => [e.id, e]));
+
+          for (const v of INITIAL_VEHICLES) {
+            const alreadyPresent = existingMap.get(v.id);
+            if (!alreadyPresent || alreadyPresent.source === "local_base") {
+              store.put({
+                ...v,
+                brand: v.brand || v.make,
+                make: v.make || v.brand,
+                source: "local_base",
+                created_at: alreadyPresent?.created_at || new Date().toISOString()
+              });
+            }
+          }
+        };
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      } catch (err) {
+        console.warn("Exception seedInitialData :", err);
+        resolve();
+      }
     });
   }
 
@@ -112,7 +143,7 @@ class MecanIQDatabase {
   // ==========================================
 
   async getAllVehicles() {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("vehicles", "readonly");
       const store = tx.objectStore("vehicles");
@@ -123,7 +154,7 @@ class MecanIQDatabase {
   }
 
   async getVehicleById(id) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("vehicles", "readonly");
       const store = tx.objectStore("vehicles");
@@ -134,7 +165,7 @@ class MecanIQDatabase {
   }
 
   async saveVehicle(vehicle) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("vehicles", "readwrite");
       const store = tx.objectStore("vehicles");
@@ -152,7 +183,7 @@ class MecanIQDatabase {
   }
 
   async deleteVehicle(id) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("vehicles", "readwrite");
       const store = tx.objectStore("vehicles");
@@ -163,7 +194,7 @@ class MecanIQDatabase {
   }
 
   async clearAIGeneratedVehicles() {
-    await this.init();
+    await this.ensureDb();
     const vehicles = await this.getAllVehicles();
     const tx = this.db.transaction("vehicles", "readwrite");
     const store = tx.objectStore("vehicles");
@@ -182,7 +213,7 @@ class MecanIQDatabase {
   // ==========================================
 
   async getFavorites() {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("favorites", "readonly");
       const store = tx.objectStore("favorites");
@@ -193,7 +224,7 @@ class MecanIQDatabase {
   }
 
   async isFavorite(vehicleId) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("favorites", "readonly");
       const store = tx.objectStore("favorites");
@@ -222,7 +253,7 @@ class MecanIQDatabase {
   // ==========================================
 
   async addToHistory(vehicleId) {
-    await this.init();
+    await this.ensureDb();
     const tx = this.db.transaction("history", "readwrite");
     const store = tx.objectStore("history");
     store.add({
@@ -235,7 +266,7 @@ class MecanIQDatabase {
   }
 
   async getRecentHistory(limit = 10) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("history", "readonly");
       const store = tx.objectStore("history");
@@ -260,7 +291,7 @@ class MecanIQDatabase {
   }
 
   async clearHistory() {
-    await this.init();
+    await this.ensureDb();
     const tx = this.db.transaction("history", "readwrite");
     const store = tx.objectStore("history");
     store.clear();
@@ -274,7 +305,7 @@ class MecanIQDatabase {
   // ==========================================
 
   async getMyVehicles() {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("my_vehicles", "readonly");
       const store = tx.objectStore("my_vehicles");
@@ -285,7 +316,7 @@ class MecanIQDatabase {
   }
 
   async saveMyVehicle(myVehicle) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("my_vehicles", "readwrite");
       const store = tx.objectStore("my_vehicles");
@@ -300,7 +331,7 @@ class MecanIQDatabase {
   }
 
   async deleteMyVehicle(id) {
-    await this.init();
+    await this.ensureDb();
     // Supprime le véhicule et ses entrées d'entretien
     const tx = this.db.transaction(["my_vehicles", "maintenance_logs"], "readwrite");
     tx.objectStore("my_vehicles").delete(id);
@@ -322,7 +353,7 @@ class MecanIQDatabase {
   // ==========================================
 
   async getMaintenanceLogs(myVehicleId) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("maintenance_logs", "readonly");
       const store = tx.objectStore("maintenance_logs");
@@ -337,7 +368,7 @@ class MecanIQDatabase {
   }
 
   async saveMaintenanceLog(entry) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("maintenance_logs", "readwrite");
       const store = tx.objectStore("maintenance_logs");
@@ -352,7 +383,7 @@ class MecanIQDatabase {
   }
 
   async deleteMaintenanceLog(id) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("maintenance_logs", "readwrite");
       const store = tx.objectStore("maintenance_logs");
@@ -367,7 +398,7 @@ class MecanIQDatabase {
   // ==========================================
 
   async getSetting(key, defaultValue = null) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve) => {
       const tx = this.db.transaction("settings", "readonly");
       const store = tx.objectStore("settings");
@@ -380,7 +411,7 @@ class MecanIQDatabase {
   }
 
   async saveSetting(key, value) {
-    await this.init();
+    await this.ensureDb();
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction("settings", "readwrite");
       const store = tx.objectStore("settings");
@@ -395,7 +426,7 @@ class MecanIQDatabase {
   // ==========================================
 
   async exportAllData() {
-    await this.init();
+    await this.ensureDb();
     const vehicles = await this.getAllVehicles();
     const myVehicles = await this.getMyVehicles();
     const favorites = await this.getFavorites();
@@ -417,7 +448,7 @@ class MecanIQDatabase {
   }
 
   async importData(data) {
-    await this.init();
+    await this.ensureDb();
     if (!data || typeof data !== "object") throw new Error("Format de fichier d'import invalide.");
 
     // Import des véhicules
