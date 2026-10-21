@@ -3,7 +3,7 @@
  * Assure le fonctionnement hors-ligne complet et la mise en cache dynamique des ressources
  */
 
-const CACHE_NAME = "mecaniq-pwa-v3.0.0";
+const CACHE_NAME = "mecaniq-pwa-v3.1.0";
 
 const ASSETS_TO_CACHE = [
   "./",

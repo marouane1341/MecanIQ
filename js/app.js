@@ -463,8 +463,24 @@ class MecanIQApp {
     const countBadge = document.getElementById("vehicleCountBadge");
     if (!grid) return;
 
-    this.vehicles = await db.getAllVehicles();
-    const favIds = await db.getFavorites();
+    try {
+      const loaded = await db.getAllVehicles();
+      if (loaded && loaded.length > 0) {
+        this.vehicles = loaded;
+      }
+    } catch (err) {
+      console.warn("Utilisation du catalogue de secours :", err);
+    }
+    if (!this.vehicles || this.vehicles.length === 0) {
+      this.vehicles = INITIAL_VEHICLES || [];
+    }
+
+    let favIds = [];
+    try {
+      favIds = await db.getFavorites();
+    } catch (err) {
+      favIds = [];
+    }
 
     const searchInput = document.getElementById("globalSearchInput");
     const query = (searchInput?.value || "").toLowerCase().trim();
@@ -684,12 +700,6 @@ class MecanIQApp {
       const aiCard = document.getElementById("aiGeneratorCard");
       const aiQuerySpan = document.getElementById("aiTargetQuery");
       if (aiCard && aiQuerySpan) {
-        aiQuerySpan.textContent = `"${query}"`;
-        aiCard.style.display = "block";
-        aiCard.scrollIntoView({ behavior: "smooth" });
-      }
-    }
-  }
         aiQuerySpan.textContent = `"${query}"`;
         aiCard.style.display = "block";
         aiCard.scrollIntoView({ behavior: "smooth" });
@@ -1558,7 +1568,20 @@ class MecanIQApp {
   }
 }
 
-// Lancement automatique de l'application MecanIQ
-window.addEventListener("DOMContentLoaded", () => {
-  window.mecaniqApp = new MecanIQApp();
-});
+// Lancement immédiat et résilient de l'application MecanIQ
+function startMecanIQ() {
+  if (!window.mecaniqApp) {
+    try {
+      window.mecaniqApp = new MecanIQApp();
+      console.log("MecanIQ initialisé avec succès !");
+    } catch (err) {
+      console.error("Erreur critique initialisation MecanIQ :", err);
+    }
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", startMecanIQ);
+} else {
+  startMecanIQ();
+}
