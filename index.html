@@ -884,6 +884,33 @@
           </select>
         </div>
 
+        <!-- Base Cloud partagée Supabase -->
+        <div class="form-group" style="padding-top: 0.5rem; border-top: 1px solid var(--border-subtle);">
+          <label class="form-label" for="settingSupabaseUrl">
+            ☁️ Base Cloud partagée Supabase (Synchronisation collaborative)
+          </label>
+          <div style="margin-bottom: 0.5rem;">
+            <label for="settingSupabaseUrl" style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.2rem;">URL du projet</label>
+            <input type="text" id="settingSupabaseUrl" class="form-control" placeholder="https://xyz.supabase.co" value="https://uevfnellf1khmvjkmnye.supabase.co">
+          </div>
+          <div style="margin-bottom: 0.5rem;">
+            <label for="settingSupabaseKey" style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.2rem;">Clé Publique (Publishable Key)</label>
+            <input type="password" id="settingSupabaseKey" class="form-control" placeholder="Sb_publishable_..." value="Sb_publishable_ye0Q2UnMlpXnh33bcO2cMA_NRGaJSB_">
+          </div>
+          <p class="form-help">
+            Partage instantané des fiches générées par IA et recherche cloud hybride entre tous les mécaniciens.
+          </p>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+            <button type="button" id="btnTestSupabase" class="btn-secondary" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+              Tester connexion Supabase
+            </button>
+            <button type="button" id="btnSyncSupabaseNow" class="btn-secondary" style="font-size: 0.82rem; padding: 0.4rem 0.8rem;">
+              Synchroniser maintenant 🔄
+            </button>
+            <span id="supabaseTestStatus" style="font-size: 0.82rem; display: flex; align-items: center;"></span>
+          </div>
+        </div>
+
         <!-- Stockage local & Cache -->
         <div class="form-group" style="padding-top: 0.5rem; border-top: 1px solid var(--border-subtle);">
           <label class="form-label">Gestion des données locales & Hors-ligne</label>

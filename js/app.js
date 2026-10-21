@@ -14,6 +14,15 @@ import {
   generateVehicleData, 
   DEFAULT_MODEL 
 } from "./api.js";
+import {
+  searchSupabaseVehicles,
+  pushVehicleToSupabase,
+  syncNewVehiclesFromSupabase,
+  getSupabaseUrl,
+  getSupabaseKey,
+  saveSupabaseConfig,
+  testSupabaseConnection
+} from "./supabase.js";
 
 class MecanIQApp {
   constructor() {
@@ -71,6 +80,22 @@ class MecanIQApp {
     // 6. Gestion du routage
     this.handleRoute();
     window.addEventListener("hashchange", () => this.handleRoute());
+
+    // 7. Synchronisation collaborative silencieuse avec Supabase Cloud
+    if (navigator.onLine) {
+      setTimeout(() => {
+        syncNewVehiclesFromSupabase()
+          .then(async (newCount) => {
+            if (newCount > 0) {
+              this.vehicles = await db.getAllVehicles();
+              await this.renderCatalog();
+              await this.updateStorageStats();
+              this.showToast(`${newCount} nouvelle(s) fiche(s) synchronisée(s) depuis Supabase ! ☁️`, "info");
+            }
+          })
+          .catch(() => {});
+      }, 1500);
+    }
   }
 
   // =========================================================================
@@ -323,6 +348,15 @@ class MecanIQApp {
       await this.saveSettings();
     });
 
+    // Modale Paramètres : Supabase Cloud
+    document.getElementById("btnTestSupabase")?.addEventListener("click", async () => {
+      await this.testSupabaseConnectionUI();
+    });
+
+    document.getElementById("btnSyncSupabaseNow")?.addEventListener("click", async () => {
+      await this.manualSyncSupabase();
+    });
+
     document.getElementById("btnClearCacheBtn")?.addEventListener("click", async () => {
       if (confirm("Voulez-vous supprimer les fiches techniques générées par l'IA du cache local ? (Les véhicules locaux seront conservés)")) {
         await db.clearAIGeneratedVehicles();
@@ -532,6 +566,7 @@ class MecanIQApp {
       .map((v) => {
         const isFav = favIds.includes(v.id);
         const isAI = v.source === "ai_generated";
+        const isCloud = v.source === "supabase_cloud";
         const brand = v.make || v.brand || "Atelier";
         const engineName = typeof v.engine === "object" ? v.engine.name || "" : (v.engine || "");
         const fuel = typeof v.engine === "object" ? v.engine.fuel || "" : (v.fuel || "");
@@ -569,8 +604,8 @@ class MecanIQApp {
             </div>
 
             <div class="card-bottom">
-              <span class="source-badge ${isAI ? "ai" : ""}">
-                ${isAI ? "Généré IA MecanIQ" : "Base Locale"}
+              <span class="source-badge ${isAI ? "ai" : isCloud ? "cloud" : ""}">
+                ${isAI ? "Généré IA MecanIQ" : isCloud ? "Cloud Supabase" : "Base Locale"}
               </span>
               <span style="color: var(--accent-amber); font-weight: 600; display: inline-flex; align-items: center; gap: 0.2rem;">
                 Voir fiche &rarr;
@@ -674,7 +709,22 @@ class MecanIQApp {
     this.renderCatalog();
   }
 
-  triggerSearchOrAI() {
+  findLocalVehicleMatch(query) {
+    if (!query) return null;
+    const q = query.toLowerCase().trim();
+    return this.vehicles.find((v) => {
+      const brand = v.make || v.brand || "";
+      const engineName = typeof v.engine === "object" ? v.engine.name || "" : (v.engine || "");
+      const engineCode = typeof v.engine === "object" ? v.engine.code || "" : (v.engine_code || "");
+      const modelsExtra = Array.isArray(v.models) ? v.models.join(" ") : "";
+      const makesExtra = Array.isArray(v.makes_compatible) ? v.makes_compatible.join(" ") : "";
+      const groupExtra = v.group || "";
+      const full = `${brand} ${v.model} ${modelsExtra} ${makesExtra} ${groupExtra} ${engineName} ${engineCode}`.toLowerCase();
+      return full.includes(q);
+    });
+  }
+
+  async triggerSearchOrAI() {
     const input = document.getElementById("globalSearchInput");
     const query = (input?.value || "").trim();
     if (!query) return;
@@ -683,32 +733,48 @@ class MecanIQApp {
     const suggestionsBox = document.getElementById("searchSuggestions");
     if (suggestionsBox) suggestionsBox.style.display = "none";
 
-    // Vérifier si un véhicule correspond exactement ou fortement
-    const match = this.vehicles.find((v) => {
-      const brand = v.make || v.brand || "";
-      const engineName = typeof v.engine === "object" ? v.engine.name || "" : (v.engine || "");
-      const modelsExtra = Array.isArray(v.models) ? v.models.join(" ") : "";
-      const makesExtra = Array.isArray(v.makes_compatible) ? v.makes_compatible.join(" ") : "";
-      const full = `${brand} ${v.model} ${modelsExtra} ${makesExtra} ${engineName}`.toLowerCase();
-      return full.includes(query.toLowerCase());
-    });
+    // 1. ÉTAPE 1 : Cache local hors-ligne (Cache-First)
+    const localMatch = this.findLocalVehicleMatch(query);
+    if (localMatch) {
+      this.openSpecSheet(localMatch.id);
+      return;
+    }
 
-    if (match) {
-      this.openSpecSheet(match.id);
-    } else {
-      // Proposer ou déclencher IA
-      const aiCard = document.getElementById("aiGeneratorCard");
-      const aiQuerySpan = document.getElementById("aiTargetQuery");
-      if (aiCard && aiQuerySpan) {
-        aiQuerySpan.textContent = `"${query}"`;
-        aiCard.style.display = "block";
-        aiCard.scrollIntoView({ behavior: "smooth" });
+    // 2. ÉTAPE 2 : Interrogation de la base Cloud partagée Supabase
+    if (navigator.onLine) {
+      this.showToast("Recherche sur la base Cloud Supabase... ☁️", "info");
+      try {
+        const cloudResults = await searchSupabaseVehicles(query);
+        if (cloudResults && cloudResults.length > 0) {
+          const cloudVehicle = cloudResults[0];
+
+          // Stocker immédiatement dans le cache local (IndexedDB) pour consultation hors-ligne
+          await db.saveVehicle(cloudVehicle);
+          this.vehicles = await db.getAllVehicles();
+          await this.renderCatalog();
+          await this.updateStorageStats();
+
+          this.showToast(`Fiche "${cloudVehicle.make || cloudVehicle.brand} ${cloudVehicle.model}" trouvée sur Supabase et mise en cache ! ☁️⚡`, "success");
+          this.openSpecSheet(cloudVehicle.id);
+          return;
+        }
+      } catch (err) {
+        console.warn("Recherche Supabase en échec ou hors-ligne :", err);
       }
+    }
+
+    // 3. ÉTAPE 3 : Absente du local et de Supabase -> Déclenchement / Proposition Génération IA Gemini Flash
+    const aiCard = document.getElementById("aiGeneratorCard");
+    const aiQuerySpan = document.getElementById("aiTargetQuery");
+    if (aiCard && aiQuerySpan) {
+      aiQuerySpan.textContent = `"${query}"`;
+      aiCard.style.display = "block";
+      aiCard.scrollIntoView({ behavior: "smooth" });
     }
   }
 
   // =========================================================================
-  // GÉNÉRATION DYNAMIQUE PAR IA GEMINI FLASH
+  // GÉNÉRATION DYNAMIQUE PAR IA GEMINI FLASH & ENRICHISSEMENT SUPABASE
   // =========================================================================
 
   async executeAiGeneration() {
@@ -734,8 +800,24 @@ class MecanIQApp {
 
     try {
       const generatedVehicle = await generateVehicleData(query);
+
+      // 1. Enregistrement simultané dans le cache local du client
+      await db.saveVehicle(generatedVehicle);
       this.vehicles = await db.getAllVehicles();
       await this.updateStorageStats();
+
+      // 2. Enrichissement collaboratif : insertion simultanée dans Supabase table `vehicles`
+      if (navigator.onLine) {
+        pushVehicleToSupabase(generatedVehicle)
+          .then((synced) => {
+            if (synced) {
+              this.showToast("Fiche partagée avec la communauté sur Supabase ! ☁️🤝", "success");
+            }
+          })
+          .catch((pushErr) => {
+            console.warn("Report de synchronisation Supabase :", pushErr);
+          });
+      }
 
       this.showToast("Fiche technique générée et sauvegardée hors-ligne ! 🚀", "success");
       if (loadingBox) loadingBox.style.display = "none";
@@ -1448,6 +1530,16 @@ class MecanIQApp {
     document.getElementById("settingModelSelect").value = model;
     document.getElementById("apiKeyTestStatus").textContent = "";
 
+    // Configuration Supabase Cloud
+    const supabaseUrl = await getSupabaseUrl();
+    const supabaseKey = await getSupabaseKey();
+    const inputSupUrl = document.getElementById("settingSupabaseUrl");
+    const inputSupKey = document.getElementById("settingSupabaseKey");
+    const supTestStatus = document.getElementById("supabaseTestStatus");
+    if (inputSupUrl) inputSupUrl.value = supabaseUrl;
+    if (inputSupKey) inputSupKey.value = supabaseKey;
+    if (supTestStatus) supTestStatus.textContent = "";
+
     await this.updateStorageStats();
     modal.classList.add("open");
   }
@@ -1478,6 +1570,44 @@ class MecanIQApp {
     }
   }
 
+  async testSupabaseConnectionUI() {
+    const url = document.getElementById("settingSupabaseUrl")?.value.trim();
+    const key = document.getElementById("settingSupabaseKey")?.value.trim();
+    const statusSpan = document.getElementById("supabaseTestStatus");
+    if (!statusSpan) return;
+
+    statusSpan.textContent = "⏳ Test en cours...";
+    statusSpan.style.color = "var(--text-muted)";
+
+    try {
+      await testSupabaseConnection(url, key);
+      statusSpan.textContent = "✓ Connecté à Supabase !";
+      statusSpan.style.color = "var(--accent-emerald)";
+      this.showToast("Connexion Supabase réussie !", "success");
+    } catch (err) {
+      statusSpan.textContent = `✕ Erreur : ${err.message}`;
+      statusSpan.style.color = "var(--accent-rose)";
+      this.showToast(`Échec connexion Supabase : ${err.message}`, "error");
+    }
+  }
+
+  async manualSyncSupabase() {
+    this.showToast("Synchronisation avec la base Supabase en cours... 🔄", "info");
+    try {
+      const added = await syncNewVehiclesFromSupabase();
+      if (added > 0) {
+        this.vehicles = await db.getAllVehicles();
+        await this.renderCatalog();
+        await this.updateStorageStats();
+        this.showToast(`${added} nouvelle(s) fiche(s) importée(s) depuis Supabase ! ☁️🎉`, "success");
+      } else {
+        this.showToast("Votre base locale est déjà à jour avec Supabase. 👍", "info");
+      }
+    } catch (err) {
+      this.showToast("Erreur lors de la synchronisation Supabase.", "error");
+    }
+  }
+
   async saveSettings() {
     const key = document.getElementById("settingApiKey").value.trim();
     const model = document.getElementById("settingModelSelect").value;
@@ -1490,6 +1620,13 @@ class MecanIQApp {
     await saveApiKey(key);
     await saveSelectedModel(model);
 
+    // Sauvegarde Supabase
+    const supUrl = document.getElementById("settingSupabaseUrl")?.value.trim();
+    const supKey = document.getElementById("settingSupabaseKey")?.value.trim();
+    if (supUrl || supKey) {
+      await saveSupabaseConfig(supUrl, supKey);
+    }
+
     document.getElementById("modalSettings").classList.remove("open");
     this.showToast("Paramètres enregistrés avec succès.", "success");
   }
@@ -1500,11 +1637,12 @@ class MecanIQApp {
 
     const allVehicles = await db.getAllVehicles();
     const aiCount = allVehicles.filter((v) => v.source === "ai_generated").length;
+    const cloudCount = allVehicles.filter((v) => v.source === "supabase_cloud").length;
     const localCount = allVehicles.filter((v) => v.source === "local_base").length;
     const myVehicles = await db.getMyVehicles();
 
     statsEl.innerHTML = `
-      <strong>${allVehicles.length}</strong> fiches techniques au total (<strong>${localCount}</strong> de base + <strong>${aiCount}</strong> générées IA) • 
+      <strong>${allVehicles.length}</strong> fiches techniques au total (<strong>${localCount}</strong> de base + <strong>${cloudCount}</strong> Cloud Supabase + <strong>${aiCount}</strong> IA) • 
       <strong>${myVehicles.length}</strong> véhicule(s) dans votre carnet.
     `;
   }
