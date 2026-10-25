@@ -1548,4 +1548,491 @@ body {
 .text-amber { color: var(--accent-amber) !important; }
 .text-cyan { color: var(--accent-cyan) !important; }
 .text-muted { color: var(--text-muted) !important; }
+
+/* ==========================================================================
+   NOUVELLES FONCTIONNALITÉS D'ATELIER (V4.0)
+   ========================================================================== */
+
+/* 1. Bouton Scanner Carte Grise / VIN */
+.btn-scan-cam {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: var(--accent-amber);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-scan-cam:hover {
+  background: var(--accent-amber);
+  color: #000;
+  border-color: var(--accent-amber);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .btn-scan-cam .scan-btn-label {
+    display: none;
+  }
+  .btn-scan-cam {
+    padding: 0.55rem 0.65rem;
+  }
+}
+
+/* Boutons Pills d'action rapide dans les fiches */
+.btn-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--accent-amber);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-action-pill:hover {
+  background: var(--accent-amber);
+  color: #000;
+  transform: scale(1.04);
+}
+
+/* 2. Groupes de boutons Toggle (Orientation & Format de bidon) */
+.btn-group-toggle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-toggle-chip {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-chip small {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-top: 0.2rem;
+}
+
+.btn-toggle-chip:hover {
+  border-color: var(--border-highlight);
+  color: var(--text-main);
+}
+
+.btn-toggle-chip.active {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+/* Cartes de résultat Déport Dynamométrique */
+.offset-result-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(17, 24, 39, 0.9) 100%);
+  border: 1px solid var(--border-highlight);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.offset-result-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.35rem;
+}
+
+.offset-result-val {
+  font-family: var(--font-mono);
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--accent-amber);
+  line-height: 1.2;
+}
+
+.offset-formula-caption {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+.workshop-tip-box {
+  background: rgba(245, 158, 11, 0.06);
+  border-left: 4px solid var(--accent-amber);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 0.85rem 1rem;
+}
+
+/* 3. Assistant de Remplissage d'Huile */
+.oil-visual-card {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 520px) {
+  .oil-visual-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.oil-bottle-gauge-wrap {
+  width: 90px;
+  height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.oil-bottle-illustration {
+  width: 75px;
+  height: 140px;
+  position: relative;
+  border: 2px solid #64748B;
+  border-radius: 8px 8px 12px 12px;
+  background: rgba(15, 23, 42, 0.7);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.oil-bottle-cap {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  width: 20px;
+  height: 8px;
+  background: #DC2626;
+  border-radius: 3px 3px 0 0;
+}
+
+.oil-bottle-body {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.oil-fluid-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, #F59E0B 0%, #B45309 100%);
+  opacity: 0.85;
+  transition: height 0.4s ease;
+}
+
+.oil-stop-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #EF4444;
+  box-shadow: 0 0 8px #EF4444;
+  z-index: 5;
+  transition: bottom 0.4s ease;
+}
+
+.oil-stop-tag {
+  position: absolute;
+  right: 2px;
+  top: -14px;
+  background: #EF4444;
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.oil-bottle-graduations {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 16px;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  padding: 8px 0;
+  pointer-events: none;
+}
+
+.oil-bottle-graduations span {
+  font-size: 0.6rem;
+  color: #94A3B8;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.oil-calc-results {
+  flex: 1;
+}
+
+.oil-stop-value {
+  font-family: var(--font-mono);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--accent-amber);
+  margin: 0.2rem 0;
+}
+
+.oil-pour-instruction {
+  font-size: 0.88rem;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+/* Chronomètre repos d'huile */
+.oil-timer-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.timer-display-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.timer-digits {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  letter-spacing: 2px;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* 4. Guide Visuel de Serrage Angulaire */
+.angular-guide-layout {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.angular-svg-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.angular-svg-caption {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent-amber);
+}
+
+.angular-cues-list {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.angular-cue-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+}
+
+.angular-cue-card .cue-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+
+.angular-cue-card .cue-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* 5. RAZ Vidange & Étapes */
+.raz-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.raz-step-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  position: relative;
+}
+
+.raz-step-badge {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-amber);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.4rem;
+}
+
+.raz-step-text {
+  font-size: 0.88rem;
+  color: var(--text-main);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.raz-steps-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.raz-flow-item {
+  display: flex;
+  gap: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  align-items: flex-start;
+}
+
+.raz-flow-num {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--accent-amber);
+  color: #000;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+/* 6. Check-list & Panier Atelier */
+.progress-bar-track {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-amber) 0%, var(--accent-emerald) 100%);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.checklist-section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.checklist-interactive-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.checklist-task-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.checklist-task-item:hover {
+  border-color: var(--border-highlight);
+  background: var(--bg-card);
+}
+
+.checklist-task-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-amber);
+  cursor: pointer;
+}
+
+.checklist-task-item.checked {
+  opacity: 0.6;
+  text-decoration: line-through;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.checklist-task-item.checked input[type="checkbox"] {
+  accent-color: var(--accent-emerald);
+}
+
 .font-mono { font-family: var(--font-mono) !important; }

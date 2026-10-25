@@ -194,6 +194,16 @@ Schéma JSON attendu :
       "Conseil d'entretien d'expert 1",
       "Conseil d'entretien d'expert 2"
     ]
+  },
+  "raz_procedure": {
+    "method": "Bouton compteur / Comodo / Pédales",
+    "steps": [
+      "Étape 1 : Couper le contact et fermer toutes les portes.",
+      "Étape 2 : Maintenir la commande de remise à zéro...",
+      "Étape 3 : Mettre le contact sans démarrer...",
+      "Étape 4 : Confirmer l'extinction du témoin d'entretien."
+    ],
+    "notes": "Remarque constructeur sur l'échéance de vidange"
   }
 }`;
 
@@ -267,6 +277,102 @@ Schéma JSON attendu :
   } catch (err) {
     if (!navigator.onLine) {
       throw new Error("Vous êtes hors-ligne. Impossible d'interroger Gemini pour un véhicule non répertorié.");
+    }
+    throw err;
+  }
+}
+
+/**
+ * Analyse une photo de carte grise (certificat d'immatriculation) ou code VIN par Gemini Flash Vision
+ * @param {string} base64Data Image encodée en base64 (avec ou sans le préfixe data:image/...;base64,)
+ * @param {string} mimeType Type MIME de l'image (ex: image/jpeg, image/png)
+ * @returns {Promise<Object>} Données extraites { make, model, generation, vin, fuel, engine_hint }
+ */
+export async function scanDocumentOrVin(base64Data, mimeType = "image/jpeg") {
+  const apiKey = await getApiKey();
+  if (!apiKey) {
+    const err = new Error("Aucune clé API Gemini n'est configurée.");
+    err.code = "NO_API_KEY";
+    throw err;
+  }
+
+  const model = await getSelectedModel();
+  const endpoint = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
+
+  let cleanBase64 = base64Data;
+  if (cleanBase64.includes(",")) {
+    cleanBase64 = cleanBase64.split(",")[1];
+  }
+
+  const prompt = `Tu es un expert d'atelier automobile et de lecture de documents officiels.
+Analyse cette image qui est soit une carte grise (certificat d'immatriculation français/européen), soit une plaque constructeur ou un numéro de série VIN (17 caractères).
+Extrais avec la plus grande rigueur les informations clés suivantes :
+- make : Marque du constructeur (champ D.1 sur carte grise, ex: Renault, Peugeot, Volkswagen, BMW, Audi, Toyota, etc.)
+- model : Modèle commercial précis (champ D.3 ou D.2, ex: Clio IV, Golf VII, 308, A3, Série 3, 208, etc.)
+- generation : Génération ou tranche d'années déductible (ex: 2012-2019, Phase 2, etc.)
+- vin : Code VIN à 17 caractères (champ E sur carte grise ou plaque châssis)
+- fuel : Énergie / Carburant (champ P.3 : ES=Essence, GO=Diesel, EL=Électrique, EE/EH/GL=Hybride)
+- engine_hint : Motorisation déductible (ex: 1.5 dCi, 2.0 TDI, 1.2 PureTech, 110 ch, etc.)
+
+RÉPONDS STRICTEMENT sous forme d'un objet JSON pur, valide, sans aucun texte autour, sans markdown backticks :
+{
+  "make": "Marque",
+  "model": "Modèle",
+  "generation": "Génération",
+  "vin": "Numéro VIN ou vide",
+  "fuel": "Carburant",
+  "engine_hint": "Motorisation ou vide"
+}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: mimeType || "image/jpeg",
+                  data: cleanBase64
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          response_mime_type: "application/json",
+          temperature: 0.1
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const message = errorData.error?.message || `Erreur API ${response.status}`;
+      throw new Error(`Échec du scan visuel : ${message}`);
+    }
+
+    const jsonResponse = await response.json();
+    const candidateText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!candidateText) {
+      throw new Error("L'IA n'a pas pu identifier le document.");
+    }
+
+    let cleanText = candidateText.trim();
+    if (cleanText.startsWith("```json")) {
+      cleanText = cleanText.replace(/^```json\s*/, "").replace(/```$/, "").trim();
+    } else if (cleanText.startsWith("```")) {
+      cleanText = cleanText.replace(/^```\s*/, "").replace(/```$/, "").trim();
+    }
+
+    return JSON.parse(cleanText);
+  } catch (err) {
+    if (!navigator.onLine) {
+      throw new Error("Vous êtes hors-ligne. Le scan visuel nécessite une connexion internet.");
     }
     throw err;
   }

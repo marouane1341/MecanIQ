@@ -12,8 +12,10 @@ import {
   saveSelectedModel, 
   testApiKey, 
   generateVehicleData, 
+  scanDocumentOrVin,
   DEFAULT_MODEL 
 } from "./api.js";
+import { getVehicleRazProcedure } from "./data/raz-procedures.js";
 import {
   searchSupabaseVehicles,
   pushVehicleToSupabase,
@@ -47,6 +49,7 @@ class MecanIQApp {
     this.setupEventListeners();
     this.setupNetworkStatusListener();
     this.setupConverters();
+    this.setupWorkshopFeatures();
 
     // 3. Enregistrement PWA Service Worker
     this.registerServiceWorker();
@@ -1042,9 +1045,30 @@ class MecanIQApp {
     document.getElementById("specOilInterval").textContent = oil.interval_km ? `${oil.interval_km.toLocaleString()} km / ${oil.interval_months || 12} mois` : "Selon préconisation carnet";
 
     const drain = oil.drain_plug || {};
-    document.getElementById("specDrainTorque").textContent = oil.drain_plug_torque || (drain.torque_nm ? `${drain.torque_nm} Nm` : "N/A");
+    const drainTorqueText = oil.drain_plug_torque || (drain.torque_nm ? `${drain.torque_nm} Nm` : "N/A");
+    document.getElementById("specDrainTorque").textContent = drainTorqueText;
     document.getElementById("specDrainThread").textContent = drain.thread || (oil.drain_plug_torque ? "Spécifié constructeur" : "Standard");
     document.getElementById("specDrainWasher").textContent = drain.washer || "Joint cuivre / écrasement";
+
+    // Mise à jour du bouton Déport Dynamométrique
+    const drainNum = parseFloat(drainTorqueText) || drain.torque_nm || 25;
+    const btnDrainOffset = document.querySelector("#tabFluids .btn-open-torque-offset");
+    if (btnDrainOffset) {
+      btnDrainOffset.setAttribute("data-torque", drainNum);
+    }
+
+    // Détection d'un serrage angulaire dans la fiche
+    const angularBadge = document.getElementById("btnDrainAngularBadge");
+    if (angularBadge) {
+      const matchAngle = drainTorqueText.match(/(\d+)\s*°/);
+      if (matchAngle) {
+        angularBadge.style.display = "inline-flex";
+        angularBadge.setAttribute("data-angle", matchAngle[1]);
+        angularBadge.textContent = `📐 +${matchAngle[1]}°`;
+      } else {
+        angularBadge.style.display = "none";
+      }
+    }
 
     const coolant = vehicle.fluids?.coolant || {};
     document.getElementById("specCoolantType").textContent = coolant.type || "Liquide universel";
@@ -1138,6 +1162,9 @@ class MecanIQApp {
     document.getElementById("specPower").textContent = vehicle.power_hp ? `${vehicle.power_hp} ch (${vehicle.power_kw || Math.round(vehicle.power_hp * 0.735)} kW)` : engineName;
     document.getElementById("specTorque").textContent = vehicle.torque_nm ? `${vehicle.torque_nm} Nm` : "N/A";
     document.getElementById("specFuel").textContent = fuel;
+
+    // 5. RENDU DE LA PROCÉDURE DE REMISE À ZÉRO (RAZ) VIDANGE
+    this.renderRazSection(vehicle);
 
     // Afficher la vue
     this.navigateTo("specSheet");
@@ -1681,6 +1708,670 @@ class MecanIQApp {
       console.error("Erreur import :", err);
       this.showToast("Fichier JSON non valide ou corrompu.", "error");
     }
+  }
+
+  // =========================================================================
+  // FONCTIONNALITÉS D'ATELIER V4.0
+  // =========================================================================
+
+  setupWorkshopFeatures() {
+    // 1. SCANNER CARTE GRISE / VIN (Vision IA)
+    const btnScan = document.getElementById("btnScanDocOrVin");
+    const inputScan = document.getElementById("inputScanCamera");
+
+    btnScan?.addEventListener("click", () => {
+      inputScan?.click();
+    });
+
+    inputScan?.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      await this.handleScanDocument(file);
+      inputScan.value = "";
+    });
+
+    // 2. CALCULATEURS DE DÉPORT DYNAMOMÉTRIQUE
+    this.setupTorqueOffset();
+
+    // 3. ASSISTANT DE REMPLISSAGE D'HUILE SÉCURISÉ
+    document.getElementById("btnOpenOilAssistant")?.addEventListener("click", () => {
+      this.openOilAssistantModal();
+    });
+    this.setupOilAssistantEvents();
+
+    // 4. GUIDE VISUEL DE SERRAGE ANGULAIRE
+    this.setupAngularGuideEvents();
+
+    // 6. PRÉPARATION DU CHANTIER & CHECK-LIST
+    document.getElementById("btnPrepareWork")?.addEventListener("click", () => {
+      this.openPrepareWorkModal();
+    });
+    this.setupPrepareWorkEvents();
+  }
+
+  // --- 1. SCAN CARTE GRISE / VIN ---
+  async handleScanDocument(file) {
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+      this.showToast("Veuillez renseigner votre clé API Gemini pour utiliser le scanner 📷", "warning");
+      this.openSettingsModal();
+      return;
+    }
+
+    const btnScan = document.getElementById("btnScanDocOrVin");
+    const searchInput = document.getElementById("globalSearchInput");
+    const clearBtn = document.getElementById("btnSearchClear");
+
+    if (btnScan) {
+      btnScan.style.opacity = "0.6";
+      btnScan.style.pointerEvents = "none";
+    }
+    this.showToast("Analyse de la Carte Grise / VIN en cours par Gemini Vision... 📷⏳", "info");
+
+    try {
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const scanResult = await scanDocumentOrVin(base64Data, file.type || "image/jpeg");
+      console.log("Résultat Scan Carte Grise :", scanResult);
+
+      const parts = [
+        scanResult.make,
+        scanResult.model,
+        scanResult.engine_hint || scanResult.fuel
+      ].filter(Boolean);
+
+      let query = parts.join(" ").trim();
+      if (!query && scanResult.vin) {
+        query = scanResult.vin;
+      }
+
+      if (!query) {
+        throw new Error("Impossible d'extraire le véhicule ou le numéro VIN de l'image.");
+      }
+
+      if (searchInput) {
+        searchInput.value = query;
+        if (clearBtn) clearBtn.style.display = "block";
+      }
+
+      const vinText = scanResult.vin ? ` (VIN: ${scanResult.vin})` : "";
+      this.showToast(`Véhicule identifié : ${scanResult.make || ""} ${scanResult.model || ""}${vinText} 🚗`, "success");
+
+      // Injection automatique dans le flux de recherche hybride (Local -> Supabase -> Génération IA)
+      await this.triggerSearchOrAI();
+    } catch (err) {
+      console.error("Erreur scan carte grise :", err);
+      this.showToast(err.message || "Échec de l'analyse du document.", "error");
+    } finally {
+      if (btnScan) {
+        btnScan.style.opacity = "1";
+        btnScan.style.pointerEvents = "auto";
+      }
+    }
+  }
+
+  // --- 2. CALCULATEUR DÉPORT DYNAMOMÉTRIQUE ---
+  setupTorqueOffset() {
+    // A. Calculateur intégré dans Outils (Convertisseurs)
+    const targetInput = document.getElementById("offsetTargetTorque");
+    const wrenchInput = document.getElementById("offsetWrenchLength");
+    const adapterInput = document.getElementById("offsetAdapterLength");
+    const angleGroup = document.getElementById("offsetAngleGroup");
+    const displayResult = document.getElementById("offsetDisplayResult");
+    const formulaCaption = document.getElementById("offsetFormulaCaption");
+
+    const updateEmbeddedCalc = () => {
+      const target = parseFloat(targetInput?.value) || 0;
+      const wrenchL = parseFloat(wrenchInput?.value) || 40;
+      const adapterE = parseFloat(adapterInput?.value) || 5;
+      const activeBtn = angleGroup?.querySelector(".btn-toggle-chip.active");
+      const angleMode = activeBtn?.getAttribute("data-angle-mode") || "0";
+
+      let finalVal = target;
+      let formulaText = "";
+
+      if (angleMode === "90") {
+        finalVal = target;
+        formulaText = `À 90° (perpendiculaire) : bras de levier effectif inchangé -> Régler exactement <strong>${target.toFixed(1)} Nm</strong>`;
+      } else if (angleMode === "180") {
+        const denom = Math.max(1, wrenchL - adapterE);
+        finalVal = target * (wrenchL / denom);
+        formulaText = `Vers l'arrière (180°) : ${target} Nm × (${wrenchL} cm / (${wrenchL} - ${adapterE} cm)) = <strong>${finalVal.toFixed(1)} Nm</strong>`;
+      } else {
+        const denom = wrenchL + adapterE;
+        finalVal = target * (wrenchL / denom);
+        formulaText = `Dans l'axe (0°) : ${target} Nm × (${wrenchL} cm / (${wrenchL} + ${adapterE} cm)) = <strong>${finalVal.toFixed(1)} Nm</strong>`;
+      }
+
+      if (displayResult) displayResult.innerHTML = `${finalVal.toFixed(1)} <span style="font-size: 1.3rem;">Nm</span>`;
+      if (formulaCaption) formulaCaption.innerHTML = formulaText;
+    };
+
+    targetInput?.addEventListener("input", updateEmbeddedCalc);
+    wrenchInput?.addEventListener("input", updateEmbeddedCalc);
+    adapterInput?.addEventListener("input", updateEmbeddedCalc);
+
+    angleGroup?.querySelectorAll(".btn-toggle-chip").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        angleGroup.querySelectorAll(".btn-toggle-chip").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        updateEmbeddedCalc();
+      });
+    });
+
+    // B. Modal Calculateur Déport (accessible depuis n'importe quelle valeur de couple)
+    const modalTarget = document.getElementById("modalOffsetTarget");
+    const modalWrench = document.getElementById("modalOffsetWrenchL");
+    const modalAdapter = document.getElementById("modalOffsetAdapterE");
+    const modalAngleGroup = document.getElementById("modalOffsetAngleGroup");
+    const modalResult = document.getElementById("modalOffsetResult");
+    const modalFormula = document.getElementById("modalOffsetFormula");
+
+    const updateModalCalc = () => {
+      const target = parseFloat(modalTarget?.value) || 0;
+      const wrenchL = parseFloat(modalWrench?.value) || 40;
+      const adapterE = parseFloat(modalAdapter?.value) || 5;
+      const activeBtn = modalAngleGroup?.querySelector(".btn-toggle-chip.active");
+      const angleMode = activeBtn?.getAttribute("data-modal-angle") || "0";
+
+      let finalVal = target;
+      let formulaText = "";
+
+      if (angleMode === "90") {
+        finalVal = target;
+        formulaText = `À 90° (perpendiculaire) : bras de levier effectif inchangé -> Régler exactement <strong>${target.toFixed(1)} Nm</strong>`;
+      } else if (angleMode === "180") {
+        const denom = Math.max(1, wrenchL - adapterE);
+        finalVal = target * (wrenchL / denom);
+        formulaText = `Vers l'arrière (180°) : ${target} Nm × (${wrenchL} cm / (${wrenchL} - ${adapterE} cm)) = <strong>${finalVal.toFixed(1)} Nm</strong>`;
+      } else {
+        const denom = wrenchL + adapterE;
+        finalVal = target * (wrenchL / denom);
+        formulaText = `Dans l'axe (0°) : ${target} Nm × (${wrenchL} cm / (${wrenchL} + ${adapterE} cm)) = <strong>${finalVal.toFixed(1)} Nm</strong>`;
+      }
+
+      if (modalResult) modalResult.innerHTML = `${finalVal.toFixed(1)} <span style="font-size: 1.2rem;">Nm</span>`;
+      if (modalFormula) modalFormula.innerHTML = formulaText;
+    };
+
+    modalTarget?.addEventListener("input", updateModalCalc);
+    modalWrench?.addEventListener("input", updateModalCalc);
+    modalAdapter?.addEventListener("input", updateModalCalc);
+
+    modalAngleGroup?.querySelectorAll(".btn-toggle-chip").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        modalAngleGroup.querySelectorAll(".btn-toggle-chip").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        updateModalCalc();
+      });
+    });
+
+    // C. Clic sur n'importe quel bouton ".btn-open-torque-offset"
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn-open-torque-offset");
+      if (btn) {
+        const torqueVal = parseFloat(btn.getAttribute("data-torque")) || 25;
+        if (modalTarget) modalTarget.value = torqueVal;
+        updateModalCalc();
+        document.getElementById("modalTorqueOffset")?.classList.add("open");
+      }
+    });
+
+    updateEmbeddedCalc();
+  }
+
+  // --- 3. ASSISTANT DE REMPLISSAGE D'HUILE SÉCURISÉ ---
+  openOilAssistantModal() {
+    if (!this.currentVehicle) return;
+    const modal = document.getElementById("modalOilAssistant");
+    if (!modal) return;
+
+    const oil = this.currentVehicle.fluids?.engine_oil || {};
+    const capStr = oil.capacity_with_filter || (oil.capacity_with_filter_l ? `${oil.capacity_with_filter_l} L` : "4.5 L");
+    const capNum = parseFloat(capStr) || 4.5;
+    const viscosity = oil.viscosity || "5W-30";
+
+    const titleEl = document.getElementById("oilModalVehicleTitle");
+    const capReqEl = document.getElementById("oilModalCapacityReq");
+    const viscEl = document.getElementById("oilModalViscosity");
+
+    if (titleEl) titleEl.textContent = `${this.currentVehicle.make || this.currentVehicle.brand} ${this.currentVehicle.model}`;
+    if (capReqEl) capReqEl.textContent = `${capNum} L`;
+    if (viscEl) viscEl.textContent = viscosity;
+
+    this.selectedOilCapacity = capNum;
+    this.updateOilBottleGauge();
+
+    modal.classList.add("open");
+  }
+
+  updateOilBottleGauge() {
+    const selector = document.getElementById("oilJugSelector");
+    const activeChip = selector?.querySelector(".btn-toggle-chip.active");
+    const jugSize = parseFloat(activeChip?.getAttribute("data-jug-size")) || 5.0;
+    const req = this.selectedOilCapacity || 4.5;
+
+    const fluidFill = document.getElementById("oilFluidFill");
+    const stopLine = document.getElementById("oilStopLine");
+    const stopVal = document.getElementById("oilStopValue");
+    const pourInstr = document.getElementById("oilPourInstruction");
+    const gradBox = document.getElementById("oilBottleGraduations");
+
+    let remaining = 0;
+    let instruction = "";
+
+    if (req <= jugSize) {
+      remaining = Math.max(0, jugSize - req);
+      instruction = `Sur votre bidon de <strong>${jugSize}L</strong>, versez l'huile et arrêtez-vous précisément lorsque le niveau restant atteint la graduation <strong>${remaining.toFixed(2)} L</strong>.`;
+    } else {
+      const fullJugs = Math.floor(req / jugSize);
+      const partial = req % jugSize;
+      remaining = jugSize - partial;
+      instruction = `Versez l'intégralité de <strong>${fullJugs} bidon(s) de ${jugSize}L</strong>. Sur le dernier bidon, arrêtez-vous à la graduation <strong>${remaining.toFixed(2)} L</strong>.`;
+    }
+
+    const pct = Math.min(100, Math.max(5, (remaining / jugSize) * 100));
+
+    if (fluidFill) fluidFill.style.height = `${pct}%`;
+    if (stopLine) stopLine.style.bottom = `${pct}%`;
+    if (stopVal) stopVal.innerHTML = `${remaining.toFixed(2)} <span style="font-size: 1.2rem;">L restant</span>`;
+    if (pourInstr) pourInstr.innerHTML = instruction;
+
+    if (gradBox) {
+      gradBox.innerHTML = `
+        <span>${jugSize}L</span>
+        <span>${(jugSize * 0.75).toFixed(1)}</span>
+        <span>${(jugSize * 0.5).toFixed(1)}</span>
+        <span>${(jugSize * 0.25).toFixed(1)}</span>
+        <span>0L</span>
+      `;
+    }
+  }
+
+  setupOilAssistantEvents() {
+    const selector = document.getElementById("oilJugSelector");
+    selector?.querySelectorAll(".btn-toggle-chip").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selector.querySelectorAll(".btn-toggle-chip").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.updateOilBottleGauge();
+      });
+    });
+
+    // Chronomètre repos d'huile (3 min = 180s)
+    let timerInterval = null;
+    let timeLeft = 180;
+    let isRunning = false;
+
+    const digitsEl = document.getElementById("oilTimerDigits");
+    const startBtn = document.getElementById("btnStartOilTimer");
+    const resetBtn = document.getElementById("btnResetOilTimer");
+    const msgEl = document.getElementById("oilTimerMessage");
+
+    const updateDisplay = () => {
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      if (digitsEl) digitsEl.textContent = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    const playBeep = () => {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {}
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 300]);
+    };
+
+    startBtn?.addEventListener("click", () => {
+      if (!isRunning) {
+        isRunning = true;
+        startBtn.textContent = "⏸ Pause";
+        if (msgEl) msgEl.textContent = "L'huile descend lentement vers le carter...";
+
+        timerInterval = setInterval(() => {
+          if (timeLeft > 0) {
+            timeLeft--;
+            updateDisplay();
+          } else {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startBtn.textContent = "▶ Repartir";
+            playBeep();
+            if (msgEl) {
+              msgEl.innerHTML = "<strong style='color: var(--accent-emerald);'>✓ 3 minutes écoulées ! L'huile est stabilisée. Effectuez le contrôle final à la jauge manuelle.</strong>";
+            }
+            this.showToast("Repos d'huile terminé ! Contrôlez le niveau à la jauge manuelle 🛢️✓", "success");
+          }
+        }, 1000);
+      } else {
+        clearInterval(timerInterval);
+        isRunning = false;
+        startBtn.textContent = "▶ Reprendre";
+        if (msgEl) msgEl.textContent = "Chronomètre en pause.";
+      }
+    });
+
+    resetBtn?.addEventListener("click", () => {
+      clearInterval(timerInterval);
+      isRunning = false;
+      timeLeft = 180;
+      updateDisplay();
+      if (startBtn) startBtn.textContent = "▶ Démarrer repos (3 min)";
+      if (msgEl) msgEl.textContent = "";
+    });
+  }
+
+  // --- 4. GUIDE VISUEL SERRAGE ANGULAIRE ---
+  setupAngularGuideEvents() {
+    const drawGauge = (svgId, degElId, clockElId, fracElId, hexElId, degree) => {
+      const svg = document.getElementById(svgId);
+      const degText = document.getElementById(degElId);
+      const clockText = document.getElementById(clockElId);
+      const fracText = document.getElementById(fracElId);
+      const hexText = document.getElementById(hexElId);
+
+      const d = parseInt(degree, 10) || 90;
+      if (degText) degText.textContent = `${d}°`;
+
+      if (clockText) {
+        if (d === 90) clockText.textContent = "De 12h00 à 03h00 (15 min)";
+        else if (d === 180) clockText.textContent = "De 12h00 à 06h00 (30 min / demi-tour)";
+        else if (d === 60) clockText.textContent = "De 12h00 à 02h00 (10 min)";
+        else if (d === 120) clockText.textContent = "De 12h00 à 04h00 (20 min)";
+        else if (d === 45) clockText.textContent = "De 12h00 à 01h30 (7.5 min)";
+        else if (d === 270) clockText.textContent = "De 12h00 à 09h00 (45 min)";
+        else clockText.textContent = `Rotation horaire de ${d}° depuis 12h00`;
+      }
+
+      if (fracText) {
+        if (d === 90) fracText.textContent = "Exactement 1/4 de tour";
+        else if (d === 180) fracText.textContent = "Exactement 1/2 tour (demi-tour)";
+        else if (d === 60) fracText.textContent = "Exactement 1/6 de tour";
+        else if (d === 120) fracText.textContent = "Exactement 1/3 de tour";
+        else if (d === 45) fracText.textContent = "Exactement 1/8 de tour";
+        else if (d === 270) fracText.textContent = "3/4 de tour complet";
+        else fracText.textContent = `Fraction : ${(d / 360).toFixed(2)} tour`;
+      }
+
+      if (hexText) {
+        const pans = (d / 60).toFixed(1);
+        if (d === 60) hexText.textContent = "Exactement 1 pan d'écrou hexagonal (6 pans)";
+        else if (d === 120) hexText.textContent = "Exactement 2 pans d'écrou hexagonal";
+        else if (d === 180) hexText.textContent = "Exactement 3 pans d'écrou hexagonal";
+        else hexText.textContent = `${pans} pan(s) d'écrou hexagonal (1 pan = 60°)`;
+      }
+
+      if (!svg) return;
+
+      const cx = 110;
+      const cy = 110;
+      const r = 75;
+      const startAngleRad = -Math.PI / 2;
+      const endAngleRad = startAngleRad + (d * Math.PI) / 180;
+
+      const xStart = cx + r * Math.cos(startAngleRad);
+      const yStart = cy + r * Math.sin(startAngleRad);
+      const xEnd = cx + r * Math.cos(endAngleRad);
+      const yEnd = cy + r * Math.sin(endAngleRad);
+
+      const largeArc = d > 180 ? 1 : 0;
+      const pathD = `M ${xStart} ${yStart} A ${r} ${r} 0 ${largeArc} 1 ${xEnd} ${yEnd}`;
+
+      svg.innerHTML = `
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#334155" stroke-width="8" />
+        <line x1="${cx}" y1="25" x2="${cx}" y2="35" stroke="#94A3B8" stroke-width="2" />
+        <line x1="${cx}" y1="185" x2="${cx}" y2="195" stroke="#94A3B8" stroke-width="2" />
+        <line x1="25" y1="${cy}" x2="35" y2="${cy}" stroke="#94A3B8" stroke-width="2" />
+        <line x1="185" y1="${cy}" x2="195" y2="${cy}" stroke="#94A3B8" stroke-width="2" />
+        <polygon points="110,90 127,100 127,120 110,130 93,120 93,100" fill="none" stroke="#64748B" stroke-width="2" />
+        <path d="${pathD}" fill="none" stroke="#F59E0B" stroke-width="10" stroke-linecap="round" />
+        <circle cx="${xStart}" cy="${yStart}" r="5" fill="#38BDF8" />
+        <circle cx="${xEnd}" cy="${yEnd}" r="6" fill="#F59E0B" />
+      `;
+    };
+
+    // A. Outil intégré dans Convertisseurs
+    document.querySelectorAll(".btn-angle-preset").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-angle-preset").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const angle = btn.getAttribute("data-angle");
+        drawGauge("angularGaugeSvg", "angularSvgDegree", "cueClock", "cueFraction", "cueHex", angle);
+      });
+    });
+
+    // B. Modale Serrage Angulaire
+    document.querySelectorAll(".btn-modal-angle-preset").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-modal-angle-preset").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const angle = btn.getAttribute("data-angle");
+        drawGauge("modalAngularGaugeSvg", "modalAngularSvgDegree", "modalCueClock", "modalCueFraction", "modalCueHex", angle);
+      });
+    });
+
+    // C. Clic sur boutons ".btn-open-angular-guide"
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn-open-angular-guide");
+      if (btn) {
+        const angle = btn.getAttribute("data-angle") || "90";
+        drawGauge("modalAngularGaugeSvg", "modalAngularSvgDegree", "modalCueClock", "modalCueFraction", "modalCueHex", angle);
+        document.getElementById("modalAngularGuide")?.classList.add("open");
+      }
+    });
+
+    drawGauge("angularGaugeSvg", "angularSvgDegree", "cueClock", "cueFraction", "cueHex", 90);
+    drawGauge("modalAngularGaugeSvg", "modalAngularSvgDegree", "modalCueClock", "modalCueFraction", "modalCueHex", 90);
+  }
+
+  // --- 5. RAZ VIDANGE MANUELLE ---
+  renderRazSection(vehicle) {
+    const proc = getVehicleRazProcedure(vehicle);
+    if (!proc || !Array.isArray(proc.steps)) return;
+
+    // A. Rendu Inline dans tabFluids
+    const inlineBox = document.getElementById("specRazStepsInline");
+    const methodBadge = document.getElementById("specRazMethodBadge");
+    if (methodBadge) methodBadge.textContent = proc.method || "Bouton compteur";
+
+    if (inlineBox) {
+      inlineBox.innerHTML = proc.steps
+        .map((step, idx) => `
+          <div class="raz-step-card">
+            <span class="raz-step-badge">Étape ${idx + 1}</span>
+            <p class="raz-step-text">${step}</p>
+          </div>
+        `)
+        .join("");
+    }
+
+    // B. Rendu Complet dans tabRazService
+    const fullBox = document.getElementById("specRazStepsFull");
+    const fullBadge = document.getElementById("specRazFullBadge");
+    const methodNotice = document.getElementById("specRazMethodNotice");
+    const notesText = document.getElementById("specRazNotesText");
+
+    if (fullBadge) fullBadge.textContent = proc.name || vehicle.brand || "Constructeur";
+    if (methodNotice) methodNotice.textContent = `Méthode : ${proc.method || "Bouton compteur"}`;
+    if (notesText) notesText.textContent = proc.notes || "Fermer toutes les portes et le capot avant d'exécuter la manipulation.";
+
+    if (fullBox) {
+      fullBox.innerHTML = proc.steps
+        .map((step, idx) => `
+          <div class="raz-flow-item">
+            <div class="raz-flow-num">${idx + 1}</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--accent-amber); margin-bottom: 0.25rem;">
+                Étape ${idx + 1}
+              </div>
+              <div style="font-size: 0.92rem; color: var(--text-main); line-height: 1.5;">
+                ${step}
+              </div>
+            </div>
+          </div>
+        `)
+        .join("");
+    }
+  }
+
+  // --- 6. CHECK-LIST & PANIER ATELIER ---
+  openPrepareWorkModal() {
+    if (!this.currentVehicle) return;
+    const modal = document.getElementById("modalPrepareWork");
+    if (!modal) return;
+
+    const v = this.currentVehicle;
+    const oil = v.fluids?.engine_oil || {};
+    const drain = oil.drain_plug || {};
+    const cap = oil.capacity_with_filter || (oil.capacity_with_filter_l ? `${oil.capacity_with_filter_l} L` : "4.5 L");
+    const visc = oil.viscosity || "5W-30";
+    const norm = oil.norm || oil.standard || "Spécification constructeur";
+    const washer = drain.washer || "Joint cuivre écrasable";
+    const thread = drain.thread || "M14 x 1.5";
+    const torque = oil.drain_plug_torque || (drain.torque_nm ? `${drain.torque_nm} Nm` : "30 Nm");
+
+    const vehicleTitle = document.getElementById("prepareVehicleTitle");
+    if (vehicleTitle) vehicleTitle.textContent = `${v.make || v.brand} ${v.model} (${v.engine?.name || v.engine || ""})`;
+
+    this.currentPrepItems = {
+      consumables: [
+        `Huile moteur neuve : ${visc} (${norm}) — Volume requis : ${cap}`,
+        `Joint de bouchon de vidange neuf : ${washer} (Filetage : ${thread})`,
+        `Filtre à huile neuf certifié (cartouche ou vissé)`,
+        `Nettoyant freins / Dégraissant carter pour nettoyage du plan de joint`
+      ],
+      tools: [
+        `Outil de démontage bouchon de vidange : ${thread.includes("Carré") ? thread : "Clé plate ou douille 6 pans adaptée"}`,
+        `Cloche ou clé à filtre pour dépose du boîtier filtre à huile`,
+        `Clé dynamométrique d'atelier (réglée à ${torque} pour le bouchon)`,
+        `Bac de récupération d'huile (capacité minimale ${Math.ceil((parseFloat(cap) || 4) + 2)} L) + Entonnoir propre`,
+        `Équipements de protection : Gants nitrile neufs + Chiffons d'atelier propres`
+      ]
+    };
+
+    const savedStateKey = `mecaniq_prep_${v.id}`;
+    let savedChecks = {};
+    try {
+      savedChecks = JSON.parse(localStorage.getItem(savedStateKey) || "{}");
+    } catch (e) {}
+
+    const consContainer = document.getElementById("prepareConsumablesList");
+    const toolsContainer = document.getElementById("prepareToolsList");
+
+    if (consContainer) {
+      consContainer.innerHTML = this.currentPrepItems.consumables
+        .map((text, i) => {
+          const checked = !!savedChecks[`c_${i}`];
+          return `
+            <label class="checklist-task-item ${checked ? "checked" : ""}">
+              <input type="checkbox" data-key="c_${i}" ${checked ? "checked" : ""}>
+              <span>${text}</span>
+            </label>
+          `;
+        })
+        .join("");
+    }
+
+    if (toolsContainer) {
+      toolsContainer.innerHTML = this.currentPrepItems.tools
+        .map((text, i) => {
+          const checked = !!savedChecks[`t_${i}`];
+          return `
+            <label class="checklist-task-item ${checked ? "checked" : ""}">
+              <input type="checkbox" data-key="t_${i}" ${checked ? "checked" : ""}>
+              <span>${text}</span>
+            </label>
+          `;
+        })
+        .join("");
+    }
+
+    this.updatePrepareProgress();
+    modal.classList.add("open");
+  }
+
+  updatePrepareProgress() {
+    const modal = document.getElementById("modalPrepareWork");
+    if (!modal) return;
+
+    const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
+    const total = checkboxes.length;
+    let checkedCount = 0;
+    const stateObj = {};
+
+    checkboxes.forEach((cb) => {
+      const k = cb.getAttribute("data-key");
+      if (cb.checked) {
+        checkedCount++;
+        stateObj[k] = true;
+      }
+    });
+
+    const pct = total > 0 ? Math.round((checkedCount / total) * 100) : 0;
+    const bar = document.getElementById("prepareProgressBar");
+    const badge = document.getElementById("prepareProgressBadge");
+
+    if (bar) bar.style.width = `${pct}%`;
+    if (badge) badge.textContent = `${checkedCount} / ${total} préparés (${pct}%)`;
+
+    if (this.currentVehicle?.id) {
+      localStorage.setItem(`mecaniq_prep_${this.currentVehicle.id}`, JSON.stringify(stateObj));
+    }
+  }
+
+  setupPrepareWorkEvents() {
+    const modal = document.getElementById("modalPrepareWork");
+
+    modal?.addEventListener("change", (e) => {
+      if (e.target.matches('input[type="checkbox"]')) {
+        const item = e.target.closest(".checklist-task-item");
+        if (item) item.classList.toggle("checked", e.target.checked);
+        this.updatePrepareProgress();
+      }
+    });
+
+    document.getElementById("btnCopyPrepareList")?.addEventListener("click", () => {
+      if (!this.currentPrepItems) return;
+      const v = this.currentVehicle;
+      const title = v ? `${v.make || v.brand} ${v.model}` : "Véhicule";
+      let text = `📋 MECANIQ - PRÉPARATION CHANTIER VIDANGE (${title})\n\n`;
+      text += `📦 CONSOMMABLES :\n`;
+      this.currentPrepItems.consumables.forEach((c) => { text += `[ ] ${c}\n`; });
+      text += `\n🛠️ OUTILLAGE REQUIS :\n`;
+      this.currentPrepItems.tools.forEach((t) => { text += `[ ] ${t}\n`; });
+
+      navigator.clipboard.writeText(text).then(() => {
+        this.showToast("Liste copiée dans le presse-papier ! Prête à envoyer 📋", "success");
+      }).catch(() => {
+        this.showToast("Erreur lors de la copie presse-papier.", "error");
+      });
+    });
+
+    document.getElementById("btnPrintPrepareList")?.addEventListener("click", () => {
+      window.print();
+    });
+
+    document.getElementById("btnResetPrepareList")?.addEventListener("click", () => {
+      if (!modal) return;
+      modal.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+        cb.checked = false;
+        cb.closest(".checklist-task-item")?.classList.remove("checked");
+      });
+      this.updatePrepareProgress();
+      this.showToast("Check-list réinitialisée.");
+    });
   }
 
   // =========================================================================
