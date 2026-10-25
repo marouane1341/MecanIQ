@@ -6,7 +6,7 @@
 import { db } from "./db.js";
 
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-export const DEFAULT_MODEL = "gemini-2.5-flash";
+export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 /**
  * Récupère la clé API Gemini stockée
@@ -237,7 +237,7 @@ Schéma JSON attendu :
     }
 
     const jsonResponse = await response.json();
-    const candidateText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidateText = (jsonResponse.candidates?.[0]?.content?.parts || []).filter((p) => p && !p.thought && typeof p.text === "string").map((p) => p.text).join("");
 
     if (!candidateText) {
       throw new Error("Réponse vide reçue de l'IA Gemini.");

@@ -169,7 +169,7 @@
   - **☀️ Atelier Plein Soleil** (Mode clair contrasté haute visibilité)
 - Saisie sécurisée de votre clé API Google Gemini ([Google AI Studio](https://aistudio.google.com/)).
 - Bouton **"Tester la connexion"** pour vérifier immédiatement la validité de votre clé.
-- Choix du modèle Gemini (`gemini-2.5-flash` ou `gemini-1.5-flash`).
+- Choix du modèle Gemini (`gemini-3.5-flash-lite` par défaut, `gemini-3.8-flash`, ou les anciens `gemini-2.5-flash` et `gemini-1.5-flash`).
 - Aucune clé inscrite en dur dans le code source.
 - Gestion du stockage : affichage du nombre de fiches en mémoire, bouton pour vider le cache des fiches IA, bouton d'**exportation globale (JSON)** et bouton d'**importation**.
 
