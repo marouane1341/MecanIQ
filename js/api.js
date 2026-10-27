@@ -102,7 +102,8 @@ RÈGLES D'OR ATELIER :
 3. Données sur la distribution précises : type (chaîne ou courroie), intervalle kilométrique et temporel.
 4. Au moins 2 boîtes à fusibles (Habitacle et Compartiment Moteur) avec tableau de fusibles réels (numéro, ampérage, couleur SAE/DIN : 5A marron/orange, 10A rouge, 15A bleu, 20A jaune, 25A blanc, 30A vert, 40A orange maxi).
 5. Radioscopie de fiabilité : au moins 3 pannes chroniques réelles connues en atelier avec gravité (high, medium, low), symptômes, causes et solutions, ainsi qu'une checklist d'achat et des recommandations pro.
-6. Le résultat doit STRICTEMENT être un objet JSON valide, sans texte additionnel, sans markdown backticks.`;
+6. Pour les véhicules avec boîte automatique, robotisée, double embrayage ou électrique, inclure impérativement la procédure de déverrouillage manuel de secours (Shift Lock Release / Emergency Neutral) pour remorquage.
+7. Le résultat doit STRICTEMENT être un objet JSON valide, sans texte additionnel, sans markdown backticks.`;
 
   const prompt = `Génère la fiche technique complète pour le véhicule suivant : "${query}".
 
@@ -204,6 +205,17 @@ Schéma JSON attendu :
       "Étape 4 : Confirmer l'extinction du témoin d'entretien."
     ],
     "notes": "Remarque constructeur sur l'échéance de vidange"
+  },
+  "emergency_neutral_procedure": {
+    "steps": [
+      "Étape 1 : Retirer le soufflet de levier de vitesses ou le cache Shift Lock...",
+      "Étape 2 : Enfoncer le loquet mécanique jaune ou insérer l'outil de déblocage...",
+      "Étape 3 : Déplacer le sélecteur de P vers N tout en maintenant la pression."
+    ],
+    "tool_required": "Tournevis plat fin / Clé de secours / Aucun outil",
+    "max_speed_kmh": 50,
+    "max_distance_km": 50,
+    "notes": "Limiter la vitesse à 50 km/h et 50 km max pour préserver la boîte. Chariot ou plateau obligatoire pour 4x4 / AWD."
   }
 }`;
 

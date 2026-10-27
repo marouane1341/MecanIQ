@@ -16,6 +16,7 @@ import {
   DEFAULT_MODEL 
 } from "./api.js";
 import { getVehicleRazProcedure } from "./data/raz-procedures.js";
+import { getVehicleEmergencyNeutralProcedure, isAutomaticVehicle } from "./data/emergency-neutral.js";
 import {
   searchSupabaseVehicles,
   pushVehicleToSupabase,
@@ -1250,6 +1251,9 @@ class MecanIQApp {
     // 5. RENDU DE LA PROCÉDURE DE REMISE À ZÉRO (RAZ) VIDANGE
     this.renderRazSection(vehicle);
 
+    // 7. RENDU DU DÉVERROUILLAGE BOÎTE AUTO (SHIFT LOCK / REMORQUAGE)
+    this.renderEmergencyNeutral(vehicle);
+
     // Afficher la vue
     this.navigateTo("specSheet");
     if (updateHash && window.location.hash !== `#vehicle/${vehicle.id}`) {
@@ -1831,6 +1835,15 @@ class MecanIQApp {
       this.openPrepareWorkModal();
     });
     this.setupPrepareWorkEvents();
+
+    // 7. DÉVERROUILLAGE MANUEL BOÎTE AUTO (SHIFT LOCK / REMORQUAGE)
+    document.getElementById("btnEmergencyNeutralHeader")?.addEventListener("click", () => {
+      this.openEmergencyNeutralModal();
+    });
+    document.getElementById("btnOpenEmergencyNeutralModal")?.addEventListener("click", () => {
+      this.openEmergencyNeutralModal();
+    });
+    this.setupEmergencyNeutralEvents();
   }
 
   // --- 1. SCAN CARTE GRISE / VIN ---
@@ -2455,6 +2468,122 @@ class MecanIQApp {
       });
       this.updatePrepareProgress();
       this.showToast("Check-list réinitialisée.");
+    });
+  }
+
+  // --- 7. DÉVERROUILLAGE MANUEL BOÎTE AUTO (SHIFT LOCK / REMORQUAGE) ---
+  renderEmergencyNeutral(vehicle) {
+    if (!vehicle) return;
+    const proc = getVehicleEmergencyNeutralProcedure(vehicle);
+    const hasAuto = isAutomaticVehicle(vehicle) || Boolean(vehicle.emergency_neutral_procedure);
+
+    // Bouton d'action d'urgence dans l'en-tête de la fiche
+    const btnHeader = document.getElementById("btnEmergencyNeutralHeader");
+    if (btnHeader) {
+      btnHeader.style.display = hasAuto ? "inline-flex" : "none";
+    }
+
+    // Carte transmission dans l'onglet Distribution & Moteur
+    const card = document.getElementById("specTransmissionCard");
+    if (card) {
+      const typeEl = document.getElementById("cardEmergencyTransmissionType");
+      const locEl = document.getElementById("cardEmergencyLocation");
+      const toolEl = document.getElementById("cardEmergencyTool");
+      const limitsEl = document.getElementById("cardEmergencyLimits");
+      const stepsSummaryEl = document.getElementById("cardEmergencyStepsSummary");
+
+      if (typeEl) typeEl.textContent = proc.transmission_type || "Boîte Automatique";
+      if (locEl) locEl.textContent = proc.location || "Sous le soufflet de levier";
+      if (toolEl) toolEl.textContent = proc.tool_required || "Tournevis plat fin";
+      if (limitsEl) limitsEl.textContent = `Max ${proc.max_speed_kmh} km/h • ${proc.max_distance_km} km`;
+
+      if (stepsSummaryEl && Array.isArray(proc.steps)) {
+        stepsSummaryEl.innerHTML = proc.steps.slice(0, 3).map((step, idx) => `
+          <div class="emergency-step-pill">
+            <span class="emergency-step-pill-badge">Étape ${idx + 1}</span>
+            <span>${escapeHtml(step)}</span>
+          </div>
+        `).join("");
+      }
+    }
+  }
+
+  openEmergencyNeutralModal(vehicle = this.currentVehicle) {
+    if (!vehicle) return;
+    const modal = document.getElementById("modalEmergencyNeutral");
+    if (!modal) return;
+
+    const proc = getVehicleEmergencyNeutralProcedure(vehicle);
+    this.currentEmergencyProc = proc;
+
+    const brand = vehicle.make || vehicle.brand || "";
+    const { main: modelMain } = parseVehicleModel(vehicle.model);
+
+    const titleEl = document.getElementById("modalEmergencyVehicleTitle");
+    const typeEl = document.getElementById("modalEmergencyTransmissionType");
+    const locEl = document.getElementById("modalEmergencyLocation");
+    const toolEl = document.getElementById("modalEmergencyTool");
+    const speedEl = document.getElementById("modalEmergencyMaxSpeed");
+    const distEl = document.getElementById("modalEmergencyMaxDistance");
+    const stepsListEl = document.getElementById("modalEmergencyStepsList");
+    const awdAlertEl = document.getElementById("modalEmergencyAwdAlert");
+    const warningTextEl = document.getElementById("modalEmergencyWarningText");
+
+    if (titleEl) titleEl.textContent = `${brand} ${modelMain}`;
+    if (typeEl) typeEl.textContent = proc.transmission_type || "Boîte Automatique";
+    if (locEl) locEl.textContent = proc.location || "Sous le soufflet de levier / trappe Shift Lock";
+    if (toolEl) toolEl.textContent = proc.tool_required || "Tournevis plat fin / Clé de secours";
+    if (speedEl) speedEl.textContent = `${proc.max_speed_kmh} km/h`;
+    if (distEl) distEl.textContent = `${proc.max_distance_km} km`;
+
+    if (stepsListEl && Array.isArray(proc.steps)) {
+      stepsListEl.innerHTML = proc.steps.map((step, idx) => `
+        <div class="emergency-step-card">
+          <div class="emergency-step-num">${idx + 1}</div>
+          <div class="emergency-step-text">${escapeHtml(step)}</div>
+        </div>
+      `).join("");
+    }
+
+    if (warningTextEl && proc.notes) {
+      warningTextEl.innerHTML = `Moteur éteint, la pompe à huile interne de la boîte automatique n'est pas entraînée. Tout tractage à plus de <strong>${proc.max_speed_kmh} km/h</strong> ou sur plus de <strong>${proc.max_distance_km} km</strong> provoque la surchauffe et la destruction irrémédiable des engrenages internes.<br><br><strong>Note atelier :</strong> ${escapeHtml(proc.notes)}`;
+    }
+
+    if (awdAlertEl) {
+      awdAlertEl.style.display = proc.is_awd ? "block" : "none";
+    }
+
+    modal.classList.add("open");
+  }
+
+  setupEmergencyNeutralEvents() {
+    document.getElementById("btnCopyEmergencyProcedure")?.addEventListener("click", () => {
+      const v = this.currentVehicle;
+      const proc = this.currentEmergencyProc || getVehicleEmergencyNeutralProcedure(v);
+      if (!v || !proc) return;
+
+      const title = `${v.make || v.brand} ${v.model}`;
+      let text = `🚨 DÉVERROUILLAGE D'URGENCE BOÎTE AUTO - ${title.toUpperCase()}\n`;
+      text += `⚙️ Transmission : ${proc.transmission_type}\n`;
+      text += `📍 Emplacement : ${proc.location}\n`;
+      text += `🛠️ Outil requis : ${proc.tool_required}\n\n`;
+      text += `📋 ÉTAPES DE DÉBLOCAGE EN POSITION NEUTRE (N) :\n`;
+      proc.steps.forEach((s, idx) => {
+        text += `${idx + 1}. ${s}\n`;
+      });
+      text += `\n⚠️ LIMITES DE REMORQUAGE SÉCURISÉ :\n`;
+      text += `- Vitesse max : ${proc.max_speed_kmh} km/h\n`;
+      text += `- Distance max : ${proc.max_distance_km} km\n`;
+      if (proc.is_awd) {
+        text += `- 4x4 / AWD : REMORQUAGE ROUES AU SOL INTERDIT (Plateau obligatoire)\n`;
+      }
+      text += `- Risque : Destruction immédiate par surchauffe / manque de lubrification interne.\n`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        this.showToast("Procédure d'urgence copiée ! Prête à envoyer 📋", "success");
+      }).catch(() => {
+        this.showToast("Erreur lors de la copie presse-papier.", "error");
+      });
     });
   }
 
