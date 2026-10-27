@@ -127,13 +127,15 @@
 
         <div class="search-box-wrapper">
           <div class="search-input-container">
-            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="globalSearchInput" class="search-input" placeholder="Rechercher marque, modèle ou moteur (ex: Clio 4, Golf 7 TDI, 208, A3...)" autocomplete="off">
-            <button id="btnSearchClear" class="search-clear-btn" title="Effacer la recherche">✕</button>
-            <button id="btnScanDocOrVin" class="btn-scan-cam" type="button" title="Scanner Carte Grise ou code VIN (Vision IA)">
+            <button id="btnSearchLoupe" class="search-icon-btn" type="button" title="Lancer la recherche" aria-label="Rechercher">
+              <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
+            <input type="text" id="globalSearchInput" class="search-input" placeholder="Rechercher marque, modèle ou moteur..." autocomplete="off" enterkeyhint="search">
+            <button id="btnSearchClear" class="search-clear-btn" type="button" title="Effacer la recherche">✕</button>
+            <button id="btnScanDocOrVin" class="btn-scan-cam" type="button" title="Scanner Carte Grise ou code VIN (Vision IA)" aria-label="Scanner Carte Grise ou code VIN">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                 <circle cx="12" cy="13" r="4"></circle>
@@ -141,7 +143,7 @@
               <span class="scan-btn-label">Scanner VIN</span>
             </button>
             <input type="file" id="inputScanCamera" accept="image/*" capture="environment" style="display: none;">
-            <button id="btnSearchSubmit" class="btn-primary" style="margin-left: 0.25rem;">
+            <button id="btnSearchSubmit" class="btn-primary search-submit-btn" type="button">
               <span>Trouver</span>
             </button>
           </div>

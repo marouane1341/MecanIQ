@@ -26,6 +26,57 @@ import {
   testSupabaseConnection
 } from "./supabase.js";
 
+/**
+ * Nettoyage et échappement sécurisé des chaînes HTML
+ */
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
+ * Découpe un modèle de véhicule pour séparer le modèle principal des modèles partagés / plateformes
+ * Ex: "Golf VII (aussi Audi A3 8V / Seat Leon 3 / Skoda Octavia 3)" -> { main: "Golf VII", shared: "Audi A3 8V / Seat Leon 3 / Skoda Octavia 3" }
+ * Ex: "Alfa Romeo 159 / Brera / Giulietta QV, 4C, Delta III" -> { main: "Alfa Romeo 159 / Brera", shared: "Giulietta QV, 4C, Delta III" }
+ */
+export function parseVehicleModel(rawModel) {
+  if (!rawModel || typeof rawModel !== "string") {
+    return { main: rawModel || "", shared: "" };
+  }
+
+  const trimmed = rawModel.trim();
+
+  // 1. Détection des parenthèses avec précision
+  const parenMatch = trimmed.match(/^(.*?)\s*\((?:aussi\s+|partagé\s+(?:avec\s+)?|plateforme\s+)?(.*?)\)$/i);
+  if (parenMatch) {
+    const main = parenMatch[1].trim();
+    let shared = parenMatch[2].trim();
+    shared = shared.replace(/^(?:aussi|partagé avec|plateforme)\s+/i, "");
+    return { main, shared };
+  }
+
+  // 2. Détection avec mot-clé "aussi" ou "partagé avec" hors parenthèses
+  const wordMatch = trimmed.match(/^(.*?)\s+(?:aussi|partagé avec)\s+(.*)$/i);
+  if (wordMatch) {
+    return { main: wordMatch[1].trim(), shared: wordMatch[2].trim() };
+  }
+
+  // 3. Détection de longues listes de modèles séparées par des slashes (>= 3 modèles)
+  const parts = trimmed.split(/\s*\/\s*/);
+  if (parts.length >= 3) {
+    const main = parts.slice(0, 2).join(" / ");
+    const shared = parts.slice(2).join(" / ");
+    return { main, shared };
+  }
+
+  return { main: trimmed, shared: "" };
+}
+
 class MecanIQApp {
   constructor() {
     this.vehicles = INITIAL_VEHICLES || [];
@@ -245,10 +296,11 @@ class MecanIQApp {
     const searchInput = document.getElementById("globalSearchInput");
     const clearBtn = document.getElementById("btnSearchClear");
     const searchSubmit = document.getElementById("btnSearchSubmit");
+    const searchLoupe = document.getElementById("btnSearchLoupe");
 
     searchInput?.addEventListener("input", (e) => {
       const val = e.target.value.trim();
-      clearBtn.style.display = val ? "block" : "none";
+      clearBtn.style.display = val ? "inline-flex" : "none";
       this.handleSearchInput(val);
     });
 
@@ -260,6 +312,10 @@ class MecanIQApp {
     });
 
     searchSubmit?.addEventListener("click", () => {
+      this.triggerSearchOrAI();
+    });
+
+    searchLoupe?.addEventListener("click", () => {
       this.triggerSearchOrAI();
     });
 
@@ -571,6 +627,7 @@ class MecanIQApp {
         const isAI = v.source === "ai_generated";
         const isCloud = v.source === "supabase_cloud";
         const brand = v.make || v.brand || "Atelier";
+        const { main: modelMain, shared: modelShared } = parseVehicleModel(v.model);
         const engineName = typeof v.engine === "object" ? v.engine.name || "" : (v.engine || "");
         const fuel = typeof v.engine === "object" ? v.engine.fuel || "" : (v.fuel || "");
         const viscosity = v.fluids?.engine_oil?.viscosity || "N/A";
@@ -580,7 +637,7 @@ class MecanIQApp {
           <div class="vehicle-card" data-id="${v.id}">
             <div>
               <div class="card-top">
-                <div class="card-brand">${brand}</div>
+                <div class="card-brand">${escapeHtml(brand)}</div>
                 <button class="favorite-btn ${isFav ? "active" : ""}" data-fav-id="${v.id}" title="${isFav ? "Retirer des favoris" : "Ajouter aux favoris"}">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFav ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -588,20 +645,28 @@ class MecanIQApp {
                 </button>
               </div>
 
-              <div class="card-title">${v.model}</div>
-              <div class="card-engine">${engineName}</div>
+              <div class="card-title-wrap">
+                <div class="card-title" title="${escapeHtml(v.model)}">${escapeHtml(modelMain)}</div>
+                ${modelShared ? `
+                  <div class="card-shared-badge" title="Modèles partagés : ${escapeHtml(modelShared)}">
+                    <span class="shared-tag-icon">partagé :</span>
+                    <span class="shared-tag-text">${escapeHtml(modelShared)}</span>
+                  </div>
+                ` : ""}
+              </div>
+              <div class="card-engine">${escapeHtml(engineName)}</div>
 
               <div class="card-specs-row">
                 <span class="spec-badge">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
-                  ${viscosity}
+                  ${escapeHtml(viscosity)}
                 </span>
                 <span class="spec-badge">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                  ${timingText}
+                  ${escapeHtml(timingText)}
                 </span>
                 <span class="spec-badge">
-                  ${v.power_hp ? v.power_hp + " ch" : fuel}
+                  ${v.power_hp ? v.power_hp + " ch" : escapeHtml(fuel)}
                 </span>
               </div>
             </div>
@@ -671,13 +736,14 @@ class MecanIQApp {
           .slice(0, 5)
           .map((v) => {
             const brand = v.make || v.brand || "Atelier";
+            const { main: modelMain, shared: modelShared } = parseVehicleModel(v.model);
             const engineName = typeof v.engine === "object" ? v.engine.name || "" : (v.engine || "");
             const viscosity = v.fluids?.engine_oil?.viscosity || "";
             return `
               <div class="suggestion-item" data-id="${v.id}">
                 <div class="suggestion-info">
-                  <span class="suggestion-name">${brand} ${v.model}</span>
-                  <span class="suggestion-sub">${engineName} ${viscosity ? `• ${viscosity}` : ""}</span>
+                  <span class="suggestion-name">${escapeHtml(brand)} ${escapeHtml(modelMain)}</span>
+                  <span class="suggestion-sub">${escapeHtml(engineName)}${viscosity ? ` • ${escapeHtml(viscosity)}` : ""}${modelShared ? ` • aussi : ${escapeHtml(modelShared)}` : ""}</span>
                 </div>
                 <span class="source-badge ${v.source === "ai_generated" ? "ai" : ""}" style="font-size: 0.65rem;">
                   ${v.source === "ai_generated" ? "IA" : "Local"}
@@ -858,17 +924,26 @@ class MecanIQApp {
     grid.innerHTML = historyVehicles
       .map((v) => {
         const brand = v.make || v.brand || "Atelier";
+        const { main: modelMain, shared: modelShared } = parseVehicleModel(v.model);
         const engineName = typeof v.engine === "object" ? v.engine.name || "" : (v.engine || "");
         const viscosity = v.fluids?.engine_oil?.viscosity || "";
         return `
           <div class="vehicle-card" data-id="${v.id}">
             <div>
-              <div class="card-brand">${brand}</div>
-              <div class="card-title">${v.model}</div>
-              <div class="card-engine">${engineName}</div>
+              <div class="card-brand">${escapeHtml(brand)}</div>
+              <div class="card-title-wrap">
+                <div class="card-title" title="${escapeHtml(v.model)}">${escapeHtml(modelMain)}</div>
+                ${modelShared ? `
+                  <div class="card-shared-badge" title="Modèles partagés : ${escapeHtml(modelShared)}">
+                    <span class="shared-tag-icon">partagé :</span>
+                    <span class="shared-tag-text">${escapeHtml(modelShared)}</span>
+                  </div>
+                ` : ""}
+              </div>
+              <div class="card-engine">${escapeHtml(engineName)}</div>
             </div>
             <div class="card-bottom">
-              <span class="spec-badge">${viscosity}</span>
+              <span class="spec-badge">${escapeHtml(viscosity)}</span>
               <span style="color: var(--accent-amber); font-weight: 600;">Ouvrir &rarr;</span>
             </div>
           </div>
@@ -907,6 +982,7 @@ class MecanIQApp {
     grid.innerHTML = favVehicles
       .map((v) => {
         const brand = v.make || v.brand || "Atelier";
+        const { main: modelMain, shared: modelShared } = parseVehicleModel(v.model);
         const engineName = typeof v.engine === "object" ? v.engine.name || "" : (v.engine || "");
         const fuel = typeof v.engine === "object" ? v.engine.fuel || "" : (v.fuel || "");
         const viscosity = v.fluids?.engine_oil?.viscosity || "N/A";
@@ -914,18 +990,26 @@ class MecanIQApp {
           <div class="vehicle-card" data-id="${v.id}">
             <div>
               <div class="card-top">
-                <div class="card-brand">${brand}</div>
+                <div class="card-brand">${escapeHtml(brand)}</div>
                 <button class="favorite-btn active" data-fav-id="${v.id}" title="Retirer des favoris">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                   </svg>
                 </button>
               </div>
-              <div class="card-title">${v.model}</div>
-              <div class="card-engine">${engineName}</div>
+              <div class="card-title-wrap">
+                <div class="card-title" title="${escapeHtml(v.model)}">${escapeHtml(modelMain)}</div>
+                ${modelShared ? `
+                  <div class="card-shared-badge" title="Modèles partagés : ${escapeHtml(modelShared)}">
+                    <span class="shared-tag-icon">partagé :</span>
+                    <span class="shared-tag-text">${escapeHtml(modelShared)}</span>
+                  </div>
+                ` : ""}
+              </div>
+              <div class="card-engine">${escapeHtml(engineName)}</div>
               <div class="card-specs-row">
-                <span class="spec-badge">${viscosity}</span>
-                <span class="spec-badge">${v.power_hp ? v.power_hp + " ch" : fuel}</span>
+                <span class="spec-badge">${escapeHtml(viscosity)}</span>
+                <span class="spec-badge">${v.power_hp ? v.power_hp + " ch" : escapeHtml(fuel)}</span>
               </div>
             </div>
             <div class="card-bottom">
