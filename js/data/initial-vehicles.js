@@ -60,7 +60,21 @@ export const INITIAL_VEHICLES = [
                                                    "Usure prématurée du volant moteur bi-masse (BVM) vers 180 000 km"
                                                ],
                             "buying_advice":  "Vérifier le bon fonctionnement du chauffage habitacle à chaud et s\u0027assurer du remplacement de la pompe à eau lors de la courroie."
-                        }
+                        },
+        "diagrams": [
+            {
+                "title": "Loquet de déblocage mécanique boîte DSG (Shift Lock)",
+                "category": "gearbox_neutral",
+                "url": "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1000&q=80",
+                "description": "Languette plastique jaune sous le soufflet de levier à enfoncer tout en déplaçant le sélecteur vers N."
+            },
+            {
+                "title": "Implantation boîte à fusibles habitacle",
+                "category": "fuse_box",
+                "url": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80",
+                "description": "Platine de fusibles SC située derrière le vide-poche conducteur escamotable."
+            }
+        ]
     },
     {
         "id":  "renault_clio4_15dci_k9k",

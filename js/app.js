@@ -17,6 +17,12 @@ import {
 } from "./api.js";
 import { getVehicleRazProcedure } from "./data/raz-procedures.js";
 import { getVehicleEmergencyNeutralProcedure, isAutomaticVehicle } from "./data/emergency-neutral.js";
+import { 
+  generateBrakeBleedSvg, 
+  generateWheelTorquePatternSvg, 
+  generateGenericShiftLockSvg, 
+  generateGenericFuseBoxSvg 
+} from "./diagrams.js";
 import {
   searchSupabaseVehicles,
   pushVehicleToSupabase,
@@ -1254,6 +1260,9 @@ class MecanIQApp {
     // 7. RENDU DU DÉVERROUILLAGE BOÎTE AUTO (SHIFT LOCK / REMORQUAGE)
     this.renderEmergencyNeutral(vehicle);
 
+    // 8. RENDU DES SCHÉMAS VISUELS & PHOTOS RÉELLES (BOÎTE À FUSIBLES)
+    this.renderFuseVisual(vehicle);
+
     // Afficher la vue
     this.navigateTo("specSheet");
     if (updateHash && window.location.hash !== `#vehicle/${vehicle.id}`) {
@@ -1301,6 +1310,7 @@ class MecanIQApp {
         btn.classList.add("active");
         this.selectedFuseBoxIndex = parseInt(btn.getAttribute("data-index"), 10);
         this.renderFusesTable(document.getElementById("fuseFilterInput")?.value.trim().toLowerCase() || "");
+        this.renderFuseVisual(this.currentVehicle);
       });
     });
 
@@ -1844,6 +1854,10 @@ class MecanIQApp {
       this.openEmergencyNeutralModal();
     });
     this.setupEmergencyNeutralEvents();
+
+    // 8. MOTEUR DE SCHÉMAS VISUELS D'ATELIER (PURGE, SERRAGE, VISIONNEUSE PHOTO)
+    this.setupDiagramsToolsEvents();
+    this.setupPhotoViewerEvents();
   }
 
   // --- 1. SCAN CARTE GRISE / VIN ---
@@ -2483,6 +2497,40 @@ class MecanIQApp {
       btnHeader.style.display = hasAuto ? "inline-flex" : "none";
     }
 
+    // Recherche d'une photo d'atelier spécifique dans vehicle.diagrams
+    const shiftLockPhoto = Array.isArray(vehicle.diagrams)
+      ? vehicle.diagrams.find((d) => d.category === "gearbox_neutral" && d.url)
+      : null;
+
+    let visualHtml = "";
+    if (shiftLockPhoto) {
+      visualHtml = `
+        <div class="photo-workshop-card" data-photo-url="${shiftLockPhoto.url}" data-photo-title="${escapeHtml(shiftLockPhoto.title || 'Déverrouillage Shift Lock')}" data-photo-desc="${escapeHtml(shiftLockPhoto.description || 'Emplacement du mécanisme de secours')}" data-photo-cat="gearbox_neutral">
+          <div class="photo-workshop-thumb-wrap">
+            <img src="${shiftLockPhoto.url}" alt="${escapeHtml(shiftLockPhoto.title)}" class="photo-workshop-thumb" loading="lazy" />
+            <span class="photo-badge">📷 Photo Réelle Atelier</span>
+            <span class="photo-zoom-hint">🔍 Agrandir (Zoom HD)</span>
+          </div>
+          <div class="photo-workshop-info">
+            <strong class="photo-workshop-title">${escapeHtml(shiftLockPhoto.title)}</strong>
+            <p class="photo-workshop-desc">${escapeHtml(shiftLockPhoto.description || "Point d'insertion de la pige de secours")}</p>
+          </div>
+        </div>
+      `;
+    } else {
+      visualHtml = `
+        <div class="svg-diagram-card">
+          <div class="svg-diagram-header">
+            <span class="svg-badge">📐 Schéma Technique d'Atelier</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Mécanisme Shift Lock universel</span>
+          </div>
+          <div class="svg-diagram-body">
+            ${generateGenericShiftLockSvg()}
+          </div>
+        </div>
+      `;
+    }
+
     // Carte transmission dans l'onglet Distribution & Moteur
     const card = document.getElementById("specTransmissionCard");
     if (card) {
@@ -2491,6 +2539,7 @@ class MecanIQApp {
       const toolEl = document.getElementById("cardEmergencyTool");
       const limitsEl = document.getElementById("cardEmergencyLimits");
       const stepsSummaryEl = document.getElementById("cardEmergencyStepsSummary");
+      const cardVisualBox = document.getElementById("cardGearboxVisualBox");
 
       if (typeEl) typeEl.textContent = proc.transmission_type || "Boîte Automatique";
       if (locEl) locEl.textContent = proc.location || "Sous le soufflet de levier";
@@ -2505,7 +2554,323 @@ class MecanIQApp {
           </div>
         `).join("");
       }
+
+      if (cardVisualBox) {
+        cardVisualBox.innerHTML = visualHtml;
+        if (shiftLockPhoto) {
+          cardVisualBox.querySelector(".photo-workshop-card")?.addEventListener("click", () => {
+            this.openPhotoViewerModal({
+              url: shiftLockPhoto.url,
+              title: shiftLockPhoto.title || "Déverrouillage Shift Lock",
+              description: shiftLockPhoto.description || "Mécanisme d'urgence sous levier",
+              category: "gearbox_neutral"
+            });
+          });
+        }
+      }
     }
+
+    // Modal visuel d'urgence
+    const modalVisualBox = document.getElementById("modalGearboxVisualBox");
+    if (modalVisualBox) {
+      modalVisualBox.innerHTML = visualHtml;
+      if (shiftLockPhoto) {
+        modalVisualBox.querySelector(".photo-workshop-card")?.addEventListener("click", () => {
+          this.openPhotoViewerModal({
+            url: shiftLockPhoto.url,
+            title: shiftLockPhoto.title || "Déverrouillage Shift Lock",
+            description: shiftLockPhoto.description || "Mécanisme d'urgence sous levier",
+            category: "gearbox_neutral"
+          });
+        });
+      }
+    }
+  }
+
+  // --- 8. SCHÉMAS VISUELS ET PHOTOS RÉELLES (BOÎTE À FUSIBLES) ---
+  renderFuseVisual(vehicle) {
+    const container = document.getElementById("fuseVisualBox");
+    if (!container || !vehicle) return;
+
+    const fusePhoto = Array.isArray(vehicle.diagrams)
+      ? vehicle.diagrams.find((d) => d.category === "fuse_box" && d.url)
+      : null;
+
+    const boxes = vehicle.fuse_boxes || [];
+    const activeBox = boxes[this.selectedFuseBoxIndex] || boxes[0] || {};
+    const locationName = activeBox.location || activeBox.name || "Compartiment Habitacle / Moteur";
+
+    if (fusePhoto) {
+      container.innerHTML = `
+        <div class="photo-workshop-card" data-photo-url="${fusePhoto.url}" data-photo-title="${escapeHtml(fusePhoto.title || 'Boîte à fusibles')}" data-photo-desc="${escapeHtml(fusePhoto.description || locationName)}" data-photo-cat="fuse_box">
+          <div class="photo-workshop-thumb-wrap">
+            <img src="${fusePhoto.url}" alt="${escapeHtml(fusePhoto.title)}" class="photo-workshop-thumb" loading="lazy" />
+            <span class="photo-badge">📷 Photo Réelle Atelier</span>
+            <span class="photo-zoom-hint">🔍 Agrandir (Zoom HD)</span>
+          </div>
+          <div class="photo-workshop-info">
+            <strong class="photo-workshop-title">${escapeHtml(fusePhoto.title)}</strong>
+            <p class="photo-workshop-desc">${escapeHtml(fusePhoto.description || locationName)}</p>
+          </div>
+        </div>
+      `;
+      container.querySelector(".photo-workshop-card")?.addEventListener("click", () => {
+        this.openPhotoViewerModal({
+          url: fusePhoto.url,
+          title: fusePhoto.title || "Boîte à fusibles",
+          description: fusePhoto.description || locationName,
+          category: "fuse_box"
+        });
+      });
+    } else {
+      container.innerHTML = `
+        <div class="svg-diagram-card">
+          <div class="svg-diagram-header">
+            <span class="svg-badge">📐 Schéma Vectoriel Boîtier</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(locationName)}</span>
+          </div>
+          <div class="svg-diagram-body">
+            ${generateGenericFuseBoxSvg(locationName)}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // --- 9. VISIONNEUSE PHOTO ATELIER TACTILE AVEC ZOOM PLEIN ÉCRAN ---
+  openPhotoViewerModal({ url, title, description, category }) {
+    const modal = document.getElementById("modalPhotoViewer");
+    const img = document.getElementById("photoViewerImg");
+    const titleEl = document.getElementById("photoViewerTitle");
+    const descEl = document.getElementById("photoViewerDesc");
+    const badgeEl = document.getElementById("photoViewerBadge");
+
+    if (!modal || !img) return;
+
+    if (titleEl) titleEl.textContent = title || "Photo Haute Résolution d'Atelier";
+    if (descEl) descEl.textContent = description || "";
+    if (badgeEl) {
+      badgeEl.textContent = category === "gearbox_neutral" ? "⚙️ Photo Déverrouillage Boîte" : "⚡ Photo Boîte à Fusibles";
+    }
+
+    img.src = url;
+    this.photoViewerState = {
+      zoom: 1.0,
+      panX: 0,
+      panY: 0,
+      isDragging: false,
+      startX: 0,
+      startY: 0
+    };
+    this.updatePhotoTransform();
+    modal.classList.add("open");
+  }
+
+  updatePhotoTransform() {
+    const img = document.getElementById("photoViewerImg");
+    const zoomText = document.getElementById("photoZoomLevelText");
+    if (!img) return;
+
+    const s = this.photoViewerState || { zoom: 1.0, panX: 0, panY: 0 };
+    img.style.transform = `translate(${s.panX}px, ${s.panY}px) scale(${s.zoom})`;
+    if (zoomText) {
+      zoomText.textContent = `${Math.round(s.zoom * 100)}%`;
+    }
+  }
+
+  setupPhotoViewerEvents() {
+    const viewport = document.getElementById("photoViewerViewport");
+    const img = document.getElementById("photoViewerImg");
+    const btnZoomIn = document.getElementById("btnZoomInPhoto");
+    const btnZoomOut = document.getElementById("btnZoomOutPhoto");
+    const btnReset = document.getElementById("btnResetZoomPhoto");
+
+    this.photoViewerState = {
+      zoom: 1.0,
+      panX: 0,
+      panY: 0,
+      isDragging: false,
+      startX: 0,
+      startY: 0
+    };
+
+    btnZoomIn?.addEventListener("click", () => {
+      this.photoViewerState.zoom = Math.min(4.0, Number((this.photoViewerState.zoom + 0.3).toFixed(2)));
+      this.updatePhotoTransform();
+    });
+
+    btnZoomOut?.addEventListener("click", () => {
+      this.photoViewerState.zoom = Math.max(0.6, Number((this.photoViewerState.zoom - 0.3).toFixed(2)));
+      if (this.photoViewerState.zoom <= 1.0) {
+        this.photoViewerState.panX = 0;
+        this.photoViewerState.panY = 0;
+      }
+      this.updatePhotoTransform();
+    });
+
+    btnReset?.addEventListener("click", () => {
+      this.photoViewerState.zoom = 1.0;
+      this.photoViewerState.panX = 0;
+      this.photoViewerState.panY = 0;
+      this.updatePhotoTransform();
+    });
+
+    viewport?.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.2 : -0.2;
+      const newZoom = Math.min(4.0, Math.max(0.6, Number((this.photoViewerState.zoom + delta).toFixed(2))));
+      this.photoViewerState.zoom = newZoom;
+      if (newZoom <= 1.0) {
+        this.photoViewerState.panX = 0;
+        this.photoViewerState.panY = 0;
+      }
+      this.updatePhotoTransform();
+    }, { passive: false });
+
+    viewport?.addEventListener("dblclick", () => {
+      if (this.photoViewerState.zoom > 1.2) {
+        this.photoViewerState.zoom = 1.0;
+        this.photoViewerState.panX = 0;
+        this.photoViewerState.panY = 0;
+      } else {
+        this.photoViewerState.zoom = 2.2;
+      }
+      this.updatePhotoTransform();
+    });
+
+    // Navigation par glisser-déposer (Pan & Drag)
+    const onStart = (clientX, clientY) => {
+      if (this.photoViewerState.zoom <= 1.0) return;
+      this.photoViewerState.isDragging = true;
+      this.photoViewerState.startX = clientX - this.photoViewerState.panX;
+      this.photoViewerState.startY = clientY - this.photoViewerState.panY;
+      if (img) img.style.cursor = "grabbing";
+    };
+
+    const onMove = (clientX, clientY) => {
+      if (!this.photoViewerState.isDragging) return;
+      this.photoViewerState.panX = clientX - this.photoViewerState.startX;
+      this.photoViewerState.panY = clientY - this.photoViewerState.startY;
+      this.updatePhotoTransform();
+    };
+
+    const onEnd = () => {
+      this.photoViewerState.isDragging = false;
+      if (img) img.style.cursor = this.photoViewerState.zoom > 1.0 ? "grab" : "default";
+    };
+
+    viewport?.addEventListener("mousedown", (e) => onStart(e.clientX, e.clientY));
+    window.addEventListener("mousemove", (e) => {
+      if (this.photoViewerState?.isDragging) onMove(e.clientX, e.clientY);
+    });
+    window.addEventListener("mouseup", () => {
+      if (this.photoViewerState?.isDragging) onEnd();
+    });
+
+    // Prise en charge tactile (Mobile / Tablette atelier)
+    viewport?.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        onStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    viewport?.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 1 && this.photoViewerState?.isDragging) {
+        onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    viewport?.addEventListener("touchend", () => onEnd());
+  }
+
+  // --- 10. MOTEUR DE SCHÉMAS VECTORIELS SVG (PURGE & SERRAGE) ---
+  setupDiagramsToolsEvents() {
+    // Initialisation des schémas SVG dans la vue Outils
+    const brakeBleedWrapper = document.getElementById("brakeBleedSvgWrapper");
+    const torquePatternWrapper = document.getElementById("torquePatternSvgWrapper");
+
+    if (brakeBleedWrapper) {
+      brakeBleedWrapper.innerHTML = generateBrakeBleedSvg("standard");
+    }
+    if (torquePatternWrapper) {
+      torquePatternWrapper.innerHTML = generateWheelTorquePatternSvg("5_studs");
+    }
+
+    // Toggle méthode de purge dans l'onglet Outils
+    const bleedButtons = document.querySelectorAll("#bleedMethodGroup button[data-bleed-method]");
+    bleedButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        bleedButtons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const method = btn.getAttribute("data-bleed-method") || "standard";
+        if (brakeBleedWrapper) {
+          brakeBleedWrapper.innerHTML = generateBrakeBleedSvg(method);
+        }
+      });
+    });
+
+    // Toggle presets de serrage dans l'onglet Outils
+    const patternButtons = document.querySelectorAll("#torquePatternCard .btn-pattern-preset");
+    patternButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        patternButtons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const pattern = btn.getAttribute("data-pattern") || "5_studs";
+        if (torquePatternWrapper) {
+          torquePatternWrapper.innerHTML = generateWheelTorquePatternSvg(pattern);
+        }
+      });
+    });
+
+    // Modale Purge des Freins depuis la Fiche Véhicule (onglet Fluides)
+    const btnOpenBrakeModal = document.getElementById("btnOpenBrakeBleedModal");
+    const modalBrake = document.getElementById("modalBrakeBleed");
+    const modalBrakeContainer = document.getElementById("modalBrakeBleedSvgContainer");
+    const modalBleedButtons = document.querySelectorAll("#modalBleedMethodGroup button[data-modal-bleed]");
+
+    btnOpenBrakeModal?.addEventListener("click", () => {
+      if (modalBrakeContainer) {
+        modalBrakeContainer.innerHTML = generateBrakeBleedSvg("standard");
+      }
+      modalBleedButtons.forEach((b) => b.classList.toggle("active", b.getAttribute("data-modal-bleed") === "standard"));
+      modalBrake?.classList.add("open");
+    });
+
+    modalBleedButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        modalBleedButtons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const method = btn.getAttribute("data-modal-bleed") || "standard";
+        if (modalBrakeContainer) {
+          modalBrakeContainer.innerHTML = generateBrakeBleedSvg(method);
+        }
+      });
+    });
+
+    // Modale Serrage Roues & Culasse depuis la Fiche Véhicule (onglet Specs)
+    const btnOpenTorqueModal = document.getElementById("btnOpenTorquePatternModal");
+    const modalTorque = document.getElementById("modalTorquePattern");
+    const modalTorqueContainer = document.getElementById("modalTorquePatternSvgContainer");
+    const modalPatternButtons = document.querySelectorAll(".btn-modal-pattern-preset");
+
+    btnOpenTorqueModal?.addEventListener("click", () => {
+      if (modalTorqueContainer) {
+        modalTorqueContainer.innerHTML = generateWheelTorquePatternSvg("5_studs");
+      }
+      modalPatternButtons.forEach((b) => b.classList.toggle("active", b.getAttribute("data-pattern") === "5_studs"));
+      modalTorque?.classList.add("open");
+    });
+
+    modalPatternButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        modalPatternButtons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const pattern = btn.getAttribute("data-pattern") || "5_studs";
+        if (modalTorqueContainer) {
+          modalTorqueContainer.innerHTML = generateWheelTorquePatternSvg(pattern);
+        }
+      });
+    });
   }
 
   openEmergencyNeutralModal(vehicle = this.currentVehicle) {

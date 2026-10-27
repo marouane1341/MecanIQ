@@ -216,7 +216,15 @@ Schéma JSON attendu :
     "max_speed_kmh": 50,
     "max_distance_km": 50,
     "notes": "Limiter la vitesse à 50 km/h et 50 km max pour préserver la boîte. Chariot ou plateau obligatoire pour 4x4 / AWD."
-  }
+  },
+  "diagrams": [
+    {
+      "title": "Titre du schéma ou photo d'atelier",
+      "category": "gearbox_neutral / fuse_box / timing / custom",
+      "url": "https://url-vers-photo-ou-storage.jpg",
+      "description": "Description détaillée du composant ou de la manipulation visualisée"
+    }
+  ]
 }`;
 
   try {

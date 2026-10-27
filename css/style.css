@@ -2311,4 +2311,222 @@ body {
   margin-top: 0.65rem;
 }
 
+/* ==========================================================================
+   MOTEUR DE SCHÉMAS VISUELS D'ATELIER & VISIONNEUSE PHOTO
+   ========================================================================== */
+
+/* Cartouche visuel hybride (Photo ou SVG) */
+.workshop-visual-box {
+  margin-top: 1rem;
+}
+
+.photo-workshop-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-workshop-card:hover {
+  border-color: var(--accent-amber);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
+}
+
+.photo-workshop-thumb-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #0B0F19;
+  overflow: hidden;
+}
+
+.photo-workshop-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.photo-workshop-card:hover .photo-workshop-thumb {
+  transform: scale(1.05);
+}
+
+.photo-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: var(--accent-amber);
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.photo-workshop-info {
+  padding: 0.85rem 1rem;
+}
+
+.photo-workshop-info strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.photo-workshop-info p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Carte illustration SVG vectorielle générique */
+.svg-diagram-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+}
+
+.svg-diagram-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.svg-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+}
+
+.workshop-diagram-svg {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+
+.diagram-interactive-wrapper {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+/* Modale Visionneuse Photo Plein Écran */
+.photo-viewer-overlay {
+  background: rgba(5, 8, 15, 0.94);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+}
+
+.photo-viewer-container {
+  width: 95vw;
+  max-width: 900px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #0B0F19;
+  border: 1px solid var(--border-highlight);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+}
+
+.photo-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  gap: 1rem;
+}
+
+.photo-viewer-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.photo-viewer-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photo-viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.photo-viewer-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.photo-viewer-body.panning {
+  cursor: grabbing;
+}
+
+.photo-viewer-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.15s ease-out;
+  transform-origin: center center;
+}
+
+.photo-viewer-footer {
+  padding: 0.85rem 1.25rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.photo-viewer-desc {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
+.photo-viewer-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
 .font-mono { font-family: var(--font-mono) !important; }

@@ -449,7 +449,15 @@
               </div>
               <div class="spec-row">
                 <span class="spec-label">Purge liquide frein</span>
-                <span id="specBrakeFluidInterval" class="spec-value">Tous les 2 ans</span>
+                <div style="text-align: right;">
+                  <span id="specBrakeFluidInterval" class="spec-value">Tous les 2 ans</span>
+                  <div style="margin-top: 0.35rem;">
+                    <button id="btnOpenBrakeBleedModal" class="btn-action-pill" type="button" title="Voir le schéma interactif d'ordre de purge des étriers">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                      <span>Schéma Purge (Châssis)</span>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="spec-row">
                 <span class="spec-label">Huile boîte de vitesses</span>
@@ -515,6 +523,9 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Section visuelle hybride Boîte à Fusibles (Photo réelle ou SVG) -->
+          <div id="fuseVisualBox" class="workshop-visual-box"></div>
         </div>
       </div>
 
@@ -619,7 +630,15 @@
               </div>
               <div class="spec-row">
                 <span class="spec-label">Couple maximal</span>
-                <span id="specTorque" class="spec-value">220 Nm</span>
+                <div style="text-align: right;">
+                  <span id="specTorque" class="spec-value">220 Nm</span>
+                  <div style="margin-top: 0.35rem;">
+                    <button id="btnOpenTorquePatternModal" class="btn-action-pill" type="button" title="Voir l'ordre de serrage des écrous et culasse">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+                      <span>Ordre de Serrage (Croix / Spirale)</span>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="spec-row">
                 <span class="spec-label">Carburant</span>
@@ -671,6 +690,9 @@
 
             <!-- Étapes rapides résumées -->
             <div id="cardEmergencyStepsSummary" class="emergency-steps-summary"></div>
+
+            <!-- Visuel hybride boîte auto : Photo réelle ou illustration SVG -->
+            <div id="cardGearboxVisualBox" class="workshop-visual-box" style="margin-top: 1rem;"></div>
           </div>
         </div>
       </div>
@@ -1049,6 +1071,93 @@
             <div class="angular-cue-card">
               <div class="cue-label">Repère pans d'écrou hexagonal (6 pans)</div>
               <div class="cue-val highlight-cyan" id="cueHex">1.5 pan d'écrou (1 pan = 60°)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outil 5 : Schéma d'Ordre de Purge des Freins -->
+      <div class="converter-card" id="brakeBleedCard" style="margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+          <h3 class="converter-title" style="margin: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <path d="M3 9h18M9 21V9"></path>
+            </svg>
+            <span>Schéma d'Ordre de Purge des Freins (Vue Châssis)</span>
+          </h3>
+          <span class="source-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan);">Composant Vectoriel SVG</span>
+        </div>
+
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Ordre chronologique officiel de purge des étriers de frein pour chasser l'air sans désamorcer le maître-cylindre ni bloquer les électrovannes ABS/ESP.
+        </p>
+
+        <!-- Sélecteur de méthode de purge -->
+        <div style="margin-bottom: 1.25rem;">
+          <div class="btn-group-toggle" id="bleedMethodGroup">
+            <button type="button" class="btn-toggle-chip active" data-bleed-method="standard">
+              <span>Standard : Du + éloigné au + proche</span>
+              <small>1: ARD ➔ 2: ARG ➔ 3: AVD ➔ 4: AVG</small>
+            </button>
+            <button type="button" class="btn-toggle-chip" data-bleed-method="diagonal">
+              <span>Circuit en X / Diagonale ABS/ESP</span>
+              <small>1: ARD ➔ 2: AVG ➔ 3: AVD ➔ 4: ARG</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- Conteneur SVG Châssis -->
+        <div id="brakeBleedSvgWrapper" class="diagram-interactive-wrapper" style="text-align: center;"></div>
+
+        <div class="workshop-tip-box" style="margin-top: 1.25rem;">
+          <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <span style="font-size: 1.4rem;">💡</span>
+            <div>
+              <strong style="color: var(--accent-amber);">Consignes d'atelier pour la purge :</strong>
+              <p style="font-size: 0.85rem; margin: 0.2rem 0 0; color: var(--text-muted);">
+                Sous pression (type purgeur automatique), réglez à <strong>1.5 à 2.0 bar maximum</strong> pour ne pas retourner les coupelles en caoutchouc du maître-cylindre. Gardez en permanence le bocal rempli de liquide neuf.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outil 6 : Ordre de Serrage des Roues & Culasse -->
+      <div class="converter-card" id="torquePatternCard" style="margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+          <h3 class="converter-title" style="margin: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 8v8M8 12h8"></path>
+            </svg>
+            <span>Ordre de Serrage des Écrous & Culasse (Croix / Étoile / Spirale)</span>
+          </h3>
+          <span class="source-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">Composant Vectoriel SVG</span>
+        </div>
+
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Visualisez l'ordre géométrique rigoureux pour plaquer uniformément les jantes et plans de joint sans voilage ni fuite.
+        </p>
+
+        <!-- Sélecteur de type de serrage -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+          <button type="button" class="filter-chip btn-pattern-preset active" data-pattern="5_studs">5 Goujons (Étoile)</button>
+          <button type="button" class="filter-chip btn-pattern-preset" data-pattern="4_studs">4 Goujons (Croix)</button>
+          <button type="button" class="filter-chip btn-pattern-preset" data-pattern="cylinder_head_10">Culasse 10 vis (Escargot / Spirale)</button>
+        </div>
+
+        <!-- Conteneur SVG Serrage -->
+        <div id="torquePatternSvgWrapper" class="diagram-interactive-wrapper" style="text-align: center;"></div>
+
+        <div class="workshop-tip-box" style="margin-top: 1.25rem;">
+          <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+            <span style="font-size: 1.4rem;">💡</span>
+            <div>
+              <strong style="color: var(--accent-cyan);">Règle de serrage progressif :</strong>
+              <p style="font-size: 0.85rem; margin: 0.2rem 0 0; color: var(--text-muted);">
+                Ne serrez jamais un écrou à fond d'un coup. Approche à la main ➔ Serrage à 50% du couple ➔ Serrage final à 100% à la clé dynamométrique selon l'ordre fléché.
+              </p>
             </div>
           </div>
         </div>
@@ -1678,6 +1787,9 @@
           </div>
         </div>
 
+        <!-- Visuel hybride boîte auto : Photo réelle atelier ou illustration SVG -->
+        <div id="modalGearboxVisualBox" class="workshop-visual-box" style="margin-bottom: 1.25rem;"></div>
+
         <!-- Étapes de manipulation -->
         <div style="margin-bottom: 1.25rem;">
           <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
@@ -1712,6 +1824,122 @@
         <button type="button" class="btn-primary btn-close-modal" data-target="modalEmergencyNeutral" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: #FFF; border: none;">
           Compris & Fermer
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODALE 6 : VISIONNEUSE PHOTO ATELIER PLEIN ÉCRAN AVEC ZOOM
+       ======================================================== -->
+  <div id="modalPhotoViewer" class="modal-overlay photo-viewer-overlay">
+    <div class="photo-viewer-container">
+      <div class="photo-viewer-header">
+        <div class="photo-viewer-title-group">
+          <span id="photoViewerBadge" class="source-badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-size: 0.78rem;">
+            📷 Photo Réelle d'Atelier
+          </span>
+          <h3 id="photoViewerTitle" class="photo-viewer-title">Titre de la photo</h3>
+        </div>
+        <div class="photo-viewer-actions">
+          <button id="btnZoomOutPhoto" class="btn-icon" title="Zoom Arrière (-)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button id="btnResetZoomPhoto" class="btn-icon" title="Réinitialiser Zoom">
+            <span id="photoZoomLevelText" style="font-size: 0.8rem; font-weight: 700;">100%</span>
+          </button>
+          <button id="btnZoomInPhoto" class="btn-icon" title="Zoom Avant (+)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button class="btn-icon btn-close-modal" data-target="modalPhotoViewer" title="Fermer">✕</button>
+        </div>
+      </div>
+
+      <div class="photo-viewer-body" id="photoViewerViewport">
+        <img id="photoViewerImg" src="" alt="Photo atelier haute résolution" class="photo-viewer-img" />
+      </div>
+
+      <div class="photo-viewer-footer">
+        <p id="photoViewerDesc" class="photo-viewer-desc"></p>
+        <div class="photo-viewer-hint">
+          <span>💡 Double-cliquez pour zoomer • Glissez pour vous déplacer dans l'image</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODALE 7 : SCHÉMA CHÂSSIS PURGE DES FREINS
+       ======================================================== -->
+  <div id="modalBrakeBleed" class="modal-overlay">
+    <div class="modal-dialog" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M3 9h18M9 21V9"></path>
+          </svg>
+          <span>Ordre de Purge des Freins (Schéma Châssis)</span>
+        </h3>
+        <button class="btn-icon btn-close-modal" data-target="modalBrakeBleed">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 1rem;">
+          <div class="btn-group-toggle" id="modalBleedMethodGroup">
+            <button type="button" class="btn-toggle-chip active" data-modal-bleed="standard">
+              <span>Standard (Éloigné ➔ Proche)</span>
+              <small>1: ARD • 2: ARG • 3: AVD • 4: AVG</small>
+            </button>
+            <button type="button" class="btn-toggle-chip" data-modal-bleed="diagonal">
+              <span>Circuit en X / ESP</span>
+              <small>1: ARD • 2: AVG • 3: AVD • 4: ARG</small>
+            </button>
+          </div>
+        </div>
+        <div id="modalBrakeBleedSvgContainer" style="text-align: center;"></div>
+        <div class="workshop-tip-box" style="margin-top: 1rem;">
+          <strong style="color: var(--accent-amber);">Consigne d'atelier :</strong>
+          <p style="font-size: 0.85rem; margin: 0.2rem 0 0; color: var(--text-muted);">
+            Ne dépassez jamais 2.0 bar de pression au purgeur. Surveillez le niveau dans le bocal toutes les 2 roues purgées.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary btn-close-modal" data-target="modalBrakeBleed">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODALE 8 : ORDRE DE SERRAGE ROUES & CULASSE
+       ======================================================== -->
+  <div id="modalTorquePattern" class="modal-overlay">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 8v8M8 12h8"></path>
+          </svg>
+          <span>Ordre de Serrage (Roues / Culasse)</span>
+        </h3>
+        <button class="btn-icon btn-close-modal" data-target="modalTorquePattern">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <button type="button" class="filter-chip btn-modal-pattern-preset active" data-pattern="5_studs">5 Goujons (Étoile)</button>
+          <button type="button" class="filter-chip btn-modal-pattern-preset" data-pattern="4_studs">4 Goujons (Croix)</button>
+          <button type="button" class="filter-chip btn-modal-pattern-preset" data-pattern="cylinder_head_10">Culasse 10 vis (Spirale)</button>
+        </div>
+        <div id="modalTorquePatternSvgContainer" style="text-align: center;"></div>
+        <div class="workshop-tip-box" style="margin-top: 1rem;">
+          <strong style="color: var(--accent-cyan);">Règle de sécurité :</strong>
+          <p style="font-size: 0.85rem; margin: 0.2rem 0 0; color: var(--text-muted);">
+            Serrer en passes croisées garantit que la jante ou la culasse s'applique uniformément contre son plan d'appui, éliminant tout risque de voilage du disque ou de fuite de joint.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary btn-close-modal" data-target="modalTorquePattern">Fermer</button>
       </div>
     </div>
   </div>
